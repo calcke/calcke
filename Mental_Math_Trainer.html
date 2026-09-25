@@ -1,0 +1,1953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Mental Math Trainer</title>
+<style>
+  :root{
+    --bg:#111318;
+    --surface:#171a20;
+    --surface-2:#1d2129;
+    --border:#2a2e37;
+    --border-soft:#22262e;
+    --text:#e9e7e1;
+    --text-dim:#8b8f98;
+    --text-faint:#565a63;
+    --accent:#e0a955;
+    --accent-soft:#3a2f1c;
+    --success:#5cbf7a;
+    --success-soft:#1c2a1f;
+    --error:#e2665f;
+    --error-soft:#2c1c1b;
+    --margin:#e0c355;
+    --margin-soft:#2c2718;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  [hidden]{ display:none !important; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    -webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; animation:none !important; }
+  }
+  .app{
+    max-width:720px;
+    margin:0 auto;
+    padding:28px 20px 60px;
+    display:flex;
+    flex-direction:column;
+    gap:0;
+  }
+  .topbar{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:22px;
+  }
+  .brand{
+    font-size:15px;
+    letter-spacing:0.02em;
+    color:var(--text-dim);
+    font-weight:600;
+  }
+  .brand b{
+    color:var(--text);
+    font-weight:700;
+  }
+  .brand .dot{ color:var(--accent); }
+
+  .tabs{
+    display:flex;
+    gap:4px;
+    border-bottom:1px solid var(--border);
+    margin-bottom:20px;
+  }
+  .tab{
+    appearance:none;
+    background:none;
+    border:none;
+    color:var(--text-dim);
+    font-family:var(--sans);
+    font-size:14px;
+    font-weight:600;
+    padding:10px 4px;
+    margin-right:22px;
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+    position:relative;
+    top:1px;
+  }
+  .tab:hover{ color:var(--text); }
+  .tab.active{
+    color:var(--text);
+    border-bottom-color:var(--accent);
+  }
+  .tab:focus-visible, button:focus-visible, input:focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+  }
+
+  .session-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:10px 14px;
+    background:var(--surface);
+    border:1px solid var(--border-soft);
+    border-radius:6px;
+    margin-bottom:22px;
+  }
+  .start-btn{
+    appearance:none;
+    border:1px solid var(--accent);
+    background:var(--accent-soft);
+    color:var(--accent);
+    font-family:var(--sans);
+    font-size:13px;
+    font-weight:700;
+    padding:9px 22px;
+    border-radius:6px;
+    cursor:pointer;
+    min-width:84px;
+  }
+  .start-btn:hover{ filter:brightness(1.12); }
+  .start-btn.stop-state{
+    border-color:var(--error);
+    background:var(--error-soft);
+    color:var(--error);
+  }
+  .stopwatch{
+    font-family:var(--mono);
+    font-variant-numeric:tabular-nums;
+    font-size:19px;
+    font-weight:700;
+    color:var(--text);
+    letter-spacing:0.02em;
+  }
+
+  .params{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:10px 12px;
+    font-size:13px;
+    color:var(--text-dim);
+    padding:10px 14px;
+    background:var(--surface);
+    border:1px solid var(--border-soft);
+    border-radius:6px;
+    margin-bottom:22px;
+  }
+  .params span{ color:var(--accent); font-family:var(--mono); font-weight:700; min-width:2.5em; }
+  .params input[type=range]{
+    flex:1;
+    min-width:90px;
+    accent-color:var(--accent);
+  }
+
+  .mem-progress{
+    display:none;
+    width:100%;
+    max-width:340px;
+    height:3px;
+    background:var(--border);
+    border-radius:2px;
+    overflow:hidden;
+    margin-bottom:22px;
+  }
+  .mem-progress.active{ display:block; }
+  .mem-progress-fill{
+    height:100%;
+    width:100%;
+    background:var(--accent);
+  }
+
+  .stage{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    padding:34px 10px 26px;
+    border-bottom:1px solid var(--border);
+  }
+  .problem{
+    font-family:var(--mono);
+    font-variant-numeric:tabular-nums;
+    font-size:clamp(30px, 8vw, 52px);
+    font-weight:600;
+    letter-spacing:0.01em;
+    line-height:1.15;
+    word-break:break-word;
+    max-width:100%;
+    margin-bottom:22px;
+  }
+  .answer-row{ width:100%; max-width:340px; }
+  #answerInput{
+    width:100%;
+    background:var(--surface);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:22px;
+    text-align:center;
+    padding:12px 14px;
+    border-radius:6px;
+    letter-spacing:0.02em;
+  }
+  #answerInput:disabled{
+    color:var(--text-dim);
+    background:var(--surface-2);
+  }
+  #answerInput::placeholder{ color:var(--text-faint); }
+
+  .weekday-buttons{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:8px;
+    margin-top:16px;
+    max-width:420px;
+  }
+  .weekday-buttons button{
+    appearance:none;
+    background:var(--surface);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-family:var(--sans);
+    font-size:13px;
+    padding:8px 12px;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  .weekday-buttons button:hover{ border-color:var(--accent); color:var(--accent); }
+  .weekday-buttons button:disabled{ opacity:0.4; cursor:default; }
+  .weekday-buttons .key{
+    color:var(--text-faint);
+    margin-right:4px;
+    font-family:var(--mono);
+  }
+
+  .feedback{
+    min-height:52px;
+    margin-top:20px;
+    padding:10px 16px;
+    border-radius:6px;
+    max-width:420px;
+    width:100%;
+    display:none;
+  }
+  .feedback.correct{ display:block; background:var(--success-soft); border:1px solid var(--success); }
+  .feedback.incorrect{ display:block; background:var(--error-soft); border:1px solid var(--error); }
+  .feedback.margin{ display:block; background:var(--margin-soft); border:1px solid var(--margin); }
+  .fb-status{
+    font-family:var(--mono);
+    font-weight:700;
+    font-size:15px;
+  }
+  .feedback.correct .fb-status{ color:var(--success); }
+  .feedback.incorrect .fb-status{ color:var(--error); }
+  .feedback.margin .fb-status{ color:var(--margin); }
+  .fb-detail{
+    font-size:13px;
+    color:var(--text-dim);
+    margin-top:4px;
+  }
+  .hint{
+    margin-top:14px;
+    font-size:12px;
+    color:var(--text-faint);
+    min-height:16px;
+  }
+
+  .stats{
+    display:flex;
+    padding:20px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .stat{
+    flex:1;
+    text-align:center;
+    padding:0 8px;
+    border-left:1px solid var(--border-soft);
+  }
+  .stat:first-child{ border-left:none; }
+  .stat-value{
+    font-family:var(--mono);
+    font-variant-numeric:tabular-nums;
+    font-size:clamp(18px, 4vw, 24px);
+    font-weight:700;
+  }
+  .stat-label{
+    font-size:11px;
+    color:var(--text-dim);
+    margin-top:4px;
+  }
+
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    padding:18px 0;
+  }
+  .controls button{
+    appearance:none;
+    background:var(--surface);
+    border:1px solid var(--border);
+    color:var(--text-dim);
+    font-family:var(--sans);
+    font-size:13px;
+    font-weight:600;
+    padding:9px 14px;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  .controls button:hover{ color:var(--text); border-color:var(--accent); }
+  #clearHistory:hover{ color:var(--error); border-color:var(--error); }
+
+  .sess-bars{
+    display:flex;
+    align-items:flex-end;
+    gap:5px;
+    height:90px;
+  }
+  .sess-bar{
+    flex:1;
+    min-width:6px;
+    border-radius:2px 2px 0 0;
+    cursor:pointer;
+  }
+  .sess-bar:hover{ filter:brightness(1.25); }
+
+  .session-list{ max-height:280px; overflow-y:auto; }
+  .session-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:10px 4px;
+    border-bottom:1px solid var(--border-soft);
+    cursor:pointer;
+  }
+  .session-row:last-child{ border-bottom:none; }
+  .session-row:hover{ background:var(--surface-2); }
+  .session-row-left{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .session-row-date{ font-size:13px; color:var(--text); font-weight:600; }
+  .session-row-modes{ font-size:11px; color:var(--text-faint); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:220px; }
+  .session-row-right{ display:flex; align-items:center; gap:16px; font-family:var(--mono); flex-shrink:0; }
+  .session-row-stat{ text-align:right; }
+  .session-row-stat .v{ font-size:13px; font-weight:700; }
+  .session-row-stat .l{ display:block; font-size:9px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.04em; margin-top:1px; }
+  .acc-good{ color:var(--success); }
+  .acc-mid{ color:var(--margin); }
+  .acc-bad{ color:var(--error); }
+
+  .report-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.82);
+    -webkit-backdrop-filter:blur(6px);
+    backdrop-filter:blur(6px);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    z-index:50;
+  }
+  .report-card{
+    position:relative;
+    isolation:isolate;
+    background:radial-gradient(120% 90% at 50% -10%, #141414 0%, #050505 55%, #000 100%);
+    border:1px solid rgba(255,255,255,0.09);
+    border-radius:24px;
+    padding:30px 24px 24px;
+    max-width:420px;
+    width:100%;
+    max-height:90vh;
+    overflow-y:auto;
+    color:#f4f3f0;
+    box-shadow:0 40px 90px rgba(0,0,0,0.65), 0 0 60px -20px var(--r-glow, rgba(224,169,85,0.4));
+    animation:reportPop .42s cubic-bezier(.19,1,.22,1);
+  }
+  @keyframes reportPop{
+    from{ opacity:0; transform:scale(.93) translateY(14px); }
+    to{ opacity:1; transform:scale(1) translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce){ .report-card{ animation:none; } }
+
+  .report-top{ text-align:center; }
+  .report-title{
+    font-size:20px;
+    font-weight:800;
+    letter-spacing:-0.01em;
+    color:#fff;
+  }
+  .report-range{
+    font-size:12.5px;
+    color:#a8a8a8;
+    margin-top:5px;
+  }
+  .report-modes{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:6px;
+    margin-top:12px;
+  }
+  .report-modes .pill{
+    font-size:10.5px;
+    font-weight:600;
+    padding:4px 11px;
+    border-radius:999px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.12);
+    color:#dcdcdc;
+    white-space:nowrap;
+  }
+
+  .report-ring-wrap{
+    position:relative;
+    width:168px;
+    height:168px;
+    margin:20px auto 6px;
+  }
+  .report-ring{ width:168px; height:168px; transform:rotate(-90deg); display:block; }
+  .ring-track{ fill:none; stroke:rgba(255,255,255,0.08); stroke-width:11; }
+  .ring-progress{
+    fill:none;
+    stroke-width:11;
+    stroke-linecap:round;
+    stroke:var(--r-a, #e0a955);
+    stroke-dasharray:439.82;
+    stroke-dashoffset:439.82;
+    filter:drop-shadow(0 0 10px var(--r-glow, rgba(224,169,85,0.55)));
+    transition:stroke-dashoffset 1.1s cubic-bezier(.16,.8,.2,1);
+  }
+  .ring-center{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+  }
+  .ring-value{
+    font-family:var(--mono);
+    font-size:36px;
+    font-weight:800;
+    letter-spacing:-0.02em;
+    color:#fff;
+  }
+  .ring-label{
+    font-size:10.5px;
+    color:#8f8f8f;
+    text-transform:uppercase;
+    letter-spacing:.09em;
+    margin-top:3px;
+  }
+
+  .report-section-title{
+    font-size:10.5px;
+    font-weight:700;
+    color:#9a9a9a;
+    text-transform:uppercase;
+    letter-spacing:0.07em;
+    margin:20px 0 9px;
+  }
+  .report-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:9px;
+    margin:20px 0 4px;
+  }
+  .report-stat{
+    background:linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px;
+    padding:13px 6px 11px;
+    text-align:center;
+  }
+  .report-stat .value{
+    font-family:var(--mono);
+    font-size:17px;
+    font-weight:800;
+    color:#fff;
+    letter-spacing:-0.01em;
+  }
+  .report-stat .label{
+    font-size:9.5px;
+    color:#8f8f8f;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    margin-top:4px;
+  }
+  .report-compare{
+    font-size:12.5px;
+    color:#c4c4c4;
+    margin-top:18px;
+    padding:13px 14px;
+    border-radius:14px;
+    background:rgba(255,255,255,0.045);
+    border:1px solid rgba(255,255,255,0.09);
+    text-align:center;
+  }
+  .report-compare .up{ color:#5cd98a; font-weight:700; }
+  .report-compare .down{ color:#ff6b6b; font-weight:700; }
+  .report-actions{
+    display:flex;
+    gap:10px;
+    margin-top:20px;
+  }
+  .report-btn{
+    flex:1;
+    appearance:none;
+    border-radius:12px;
+    padding:13px;
+    font-family:var(--sans);
+    font-weight:700;
+    font-size:13.5px;
+    cursor:pointer;
+  }
+  .report-btn.primary{
+    background:#fff;
+    border:1px solid #fff;
+    color:#000;
+  }
+  .report-btn.primary:hover{ filter:brightness(.92); }
+  .report-btn.ghost{
+    background:transparent;
+    border:1px solid rgba(255,255,255,0.22);
+    color:#f4f3f0;
+  }
+  .report-btn.ghost:hover{ border-color:rgba(255,255,255,0.55); }
+  .report-btn.ghost:disabled{ opacity:.5; cursor:default; }
+
+  .history{ padding-top:6px; }
+  .chart-card{
+    padding:16px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .chart-card h4{
+    margin:0 0 10px;
+    font-size:11px;
+    font-weight:600;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+  }
+  .chart-empty{
+    font-size:13px;
+    color:var(--text-faint);
+    padding:18px 0;
+    text-align:center;
+  }
+  .breakdown-bar{
+    display:flex;
+    height:10px;
+    border-radius:5px;
+    overflow:hidden;
+    background:var(--surface-2);
+  }
+  .breakdown-row{
+    display:flex;
+    justify-content:space-between;
+    font-size:12.5px;
+    color:var(--text-dim);
+    margin-top:8px;
+    font-family:var(--mono);
+  }
+  .breakdown-row .dot{
+    display:inline-block;
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    margin-right:6px;
+  }
+  .history-head{
+    font-size:12px;
+    color:var(--text-dim);
+    margin-bottom:8px;
+  }
+  .history-head span{ color:var(--text); font-weight:600; }
+  .history-scroll{
+    overflow-x:auto;
+    border:1px solid var(--border-soft);
+    border-radius:6px;
+  }
+  table{
+    border-collapse:collapse;
+    width:100%;
+    font-size:12.5px;
+    min-width:560px;
+  }
+  thead th{
+    text-align:left;
+    font-weight:600;
+    color:var(--text-dim);
+    padding:8px 10px;
+    border-bottom:1px solid var(--border);
+    background:var(--surface);
+    white-space:nowrap;
+  }
+  tbody td{
+    padding:7px 10px;
+    border-bottom:1px solid var(--border-soft);
+    color:var(--text);
+    font-family:var(--mono);
+    white-space:nowrap;
+  }
+  tbody tr:last-child td{ border-bottom:none; }
+  .status-Correct{ color:var(--success); }
+  .status-Incorrect{ color:var(--error); }
+  .status-Margin{ color:var(--margin); }
+  .empty-row td{
+    font-family:var(--sans);
+    color:var(--text-faint);
+    text-align:center;
+    padding:16px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand"><b>Mental Math</b> <span class="dot">·</span> Trainer</div>
+  </div>
+
+  <nav class="tabs">
+    <button class="tab active" data-mode="sqrt" type="button">Square root</button>
+    <button class="tab" data-mode="dayofweek" type="button">Day of week</button>
+    <button class="tab" data-mode="cuberoot" type="button">Cube root</button>
+    <button class="tab" data-mode="memory" type="button">Memory span</button>
+  </nav>
+
+  <div class="session-bar">
+    <button id="startStopBtn" class="start-btn" type="button">Start</button>
+    <div class="stopwatch" id="stopwatch">00:00.0</div>
+  </div>
+
+  <div class="params" id="paramsSqrt" hidden>
+    <label for="sqrtSigSlider">Accuracy (s.f.)</label>
+    <input type="range" id="sqrtSigSlider" min="2" max="12" value="10">
+    <span id="sqrtSigValue">10</span>
+  </div>
+
+  <div class="params" id="paramsCube" hidden>
+    <label for="digitSlider">Root digits</label>
+    <input type="range" id="digitSlider" min="1" max="10" value="5">
+    <span id="digitValue">5</span>
+  </div>
+
+  <div class="params" id="paramsMemory" hidden>
+    <label for="memDigits">Digits</label>
+    <input type="range" id="memDigits" min="3" max="20" value="6">
+    <span id="memDigitsValue">6</span>
+    <label for="memTime">Flash time</label>
+    <input type="range" id="memTime" min="0.5" max="10" step="0.5" value="3">
+    <span id="memTimeValue">3.0s</span>
+  </div>
+
+  <main class="stage">
+    <div class="problem" id="problemDisplay">4,761</div>
+    <div class="mem-progress" id="memProgress"><div class="mem-progress-fill" id="memProgressFill"></div></div>
+    <div class="answer-row">
+      <input type="text" id="answerInput" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="Answer">
+    </div>
+    <div class="weekday-buttons" id="weekdayButtons" hidden></div>
+    <div class="feedback" id="feedback"></div>
+    <div class="hint" id="hint">Press Enter to submit</div>
+  </main>
+
+  <section class="stats" id="statsBar">
+    <div class="stat"><div class="stat-value" id="statAttempts">0</div><div class="stat-label">Attempts</div></div>
+    <div class="stat"><div class="stat-value" id="statAccuracy">—</div><div class="stat-label">Accuracy</div></div>
+    <div class="stat"><div class="stat-value" id="statAvg">—</div><div class="stat-label">Avg time</div></div>
+    <div class="stat"><div class="stat-value" id="statPB">—</div><div class="stat-label">Best time</div></div>
+  </section>
+
+  <section class="controls">
+    <button id="toggleHistory" type="button">Show history</button>
+    <button id="exportCsv" type="button">Export CSV</button>
+    <button id="clearHistory" type="button">Clear history</button>
+  </section>
+
+  <section class="history" id="historySection" hidden>
+    <div class="history-head">History — <span id="historyModeLabel">Square root (4-digit)</span></div>
+
+    <div class="chart-card">
+      <h4>Accuracy by session · all modes</h4>
+      <div id="sessionsAccChart"></div>
+    </div>
+
+    <div class="chart-card">
+      <h4>Avg. time by session · all modes</h4>
+      <div id="sessionsTimeChart"></div>
+    </div>
+
+    <div class="chart-card">
+      <h4>Session history — tap any session for its report card</h4>
+      <div id="sessionsList" class="session-list"></div>
+    </div>
+
+    <div class="chart-card">
+      <h4>Response time · this mode</h4>
+      <div id="timeChartHolder"></div>
+    </div>
+
+    <div class="chart-card">
+      <h4>Outcome breakdown · this mode</h4>
+      <div id="breakdownHolder"></div>
+    </div>
+
+    <div class="history-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th><th>Problem</th><th>Answer</th><th>Correct answer</th><th>Duration</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="report-overlay" id="reportOverlay" hidden>
+    <div class="report-card" id="reportCard">
+      <div class="report-top">
+        <div class="report-title" id="reportTitle">Session complete</div>
+        <div class="report-range" id="reportRange"></div>
+        <div class="report-modes" id="reportModes"></div>
+      </div>
+      <div class="report-ring-wrap">
+        <svg class="report-ring" viewBox="0 0 168 168">
+          <circle class="ring-track" cx="84" cy="84" r="70"></circle>
+          <circle class="ring-progress" id="ringProgress" cx="84" cy="84" r="70"></circle>
+        </svg>
+        <div class="ring-center">
+          <div class="ring-value" id="ringValue">0%</div>
+          <div class="ring-label">Accuracy</div>
+        </div>
+      </div>
+      <div class="report-grid" id="reportGrid"></div>
+      <div class="report-section-title">Response time this session</div>
+      <div id="reportTimeChart"></div>
+      <div class="report-section-title">Outcome breakdown</div>
+      <div id="reportBreakdown"></div>
+      <div class="report-compare" id="reportCompare"></div>
+      <div class="report-actions">
+        <button id="reportDownloadBtn" class="report-btn ghost" type="button">Download PNG</button>
+        <button id="reportCloseBtn" class="report-btn primary" type="button">Continue</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var WEEKDAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+  var STORAGE_KEY = "mmt_log_v1";
+  var SESSIONS_KEY = "mmt_sessions_v1";
+
+  var els = {
+    tabs: Array.prototype.slice.call(document.querySelectorAll(".tab")),
+    startStopBtn: document.getElementById("startStopBtn"),
+    stopwatch: document.getElementById("stopwatch"),
+    reportOverlay: document.getElementById("reportOverlay"),
+    reportCard: document.getElementById("reportCard"),
+    reportTitle: document.getElementById("reportTitle"),
+    reportRange: document.getElementById("reportRange"),
+    reportModes: document.getElementById("reportModes"),
+    ringProgress: document.getElementById("ringProgress"),
+    ringValue: document.getElementById("ringValue"),
+    reportGrid: document.getElementById("reportGrid"),
+    reportTimeChart: document.getElementById("reportTimeChart"),
+    reportBreakdown: document.getElementById("reportBreakdown"),
+    reportCompare: document.getElementById("reportCompare"),
+    reportDownloadBtn: document.getElementById("reportDownloadBtn"),
+    reportCloseBtn: document.getElementById("reportCloseBtn"),
+    sessionsAccChart: document.getElementById("sessionsAccChart"),
+    sessionsTimeChart: document.getElementById("sessionsTimeChart"),
+    sessionsList: document.getElementById("sessionsList"),
+    paramsSqrt: document.getElementById("paramsSqrt"),
+    sqrtSigSlider: document.getElementById("sqrtSigSlider"),
+    sqrtSigValue: document.getElementById("sqrtSigValue"),
+    paramsCube: document.getElementById("paramsCube"),
+    digitSlider: document.getElementById("digitSlider"),
+    digitValue: document.getElementById("digitValue"),
+    paramsMemory: document.getElementById("paramsMemory"),
+    memDigitsSlider: document.getElementById("memDigits"),
+    memDigitsValue: document.getElementById("memDigitsValue"),
+    memTimeSlider: document.getElementById("memTime"),
+    memTimeValue: document.getElementById("memTimeValue"),
+    memProgress: document.getElementById("memProgress"),
+    memProgressFill: document.getElementById("memProgressFill"),
+    problemDisplay: document.getElementById("problemDisplay"),
+    answerInput: document.getElementById("answerInput"),
+    weekdayButtons: document.getElementById("weekdayButtons"),
+    feedback: document.getElementById("feedback"),
+    hint: document.getElementById("hint"),
+    statAttempts: document.getElementById("statAttempts"),
+    statAccuracy: document.getElementById("statAccuracy"),
+    statAvg: document.getElementById("statAvg"),
+    statPB: document.getElementById("statPB"),
+    toggleHistory: document.getElementById("toggleHistory"),
+    exportCsv: document.getElementById("exportCsv"),
+    clearHistory: document.getElementById("clearHistory"),
+    historySection: document.getElementById("historySection"),
+    historyModeLabel: document.getElementById("historyModeLabel"),
+    timeChartHolder: document.getElementById("timeChartHolder"),
+    breakdownHolder: document.getElementById("breakdownHolder"),
+    historyBody: document.getElementById("historyBody")
+  };
+
+  var state = {
+    mode: "sqrt",
+    sqrtSigFigs: 10,
+    cubeDigits: 5,
+    memoryDigits: 6,
+    memoryTimeSec: 3,
+    memoryTimeoutId: null,
+    phase: "idle",
+    startTime: 0,
+    problem: null,
+    started: false,
+    sessionId: null,
+    sessionStartedAt: null,
+    sessionElapsedMs: 0,
+    sessionRunStart: null,
+    stopwatchIntervalId: null
+  };
+
+  var log = loadLog();
+  var sessions = loadSessions();
+
+  // ---------- storage ----------
+  function loadLog(){
+    try{
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      if(!raw) return [];
+      var parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    }catch(e){
+      return [];
+    }
+  }
+
+  function saveLog(){
+    try{
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(log));
+    }catch(e){
+      /* storage unavailable or full — continue without persistence */
+    }
+  }
+
+  function loadSessions(){
+    try{
+      var raw = window.localStorage.getItem(SESSIONS_KEY);
+      if(!raw) return [];
+      var parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    }catch(e){
+      return [];
+    }
+  }
+
+  function saveSessions(){
+    try{
+      window.localStorage.setItem(SESSIONS_KEY, JSON.stringify(sessions));
+    }catch(e){
+      /* storage unavailable or full — continue without persistence */
+    }
+  }
+
+  // ---------- helpers ----------
+  function randInt(min, max){
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function commaFormat(digitString){
+    var negative = digitString.charAt(0) === "-";
+    var s = negative ? digitString.slice(1) : digitString;
+    s = s.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return negative ? "-" + s : s;
+  }
+
+  function modeLabel(mode){
+    if(mode === "sqrt") return "Square root (4-digit, " + state.sqrtSigFigs + " s.f.)";
+    if(mode === "dayofweek") return "Day of week";
+    if(mode === "cuberoot") return "Cube root (" + state.cubeDigits + "-digit root)";
+    if(mode === "memory") return "Memory span (" + state.memoryDigits + " digits, " + state.memoryTimeSec.toFixed(1) + "s)";
+    return mode;
+  }
+
+  function currentModeKey(){
+    if(state.mode === "sqrt") return "sqrt-" + state.sqrtSigFigs;
+    if(state.mode === "cuberoot") return "cuberoot-" + state.cubeDigits;
+    if(state.mode === "memory") return "memory-" + state.memoryDigits + "-" + state.memoryTimeSec;
+    return state.mode;
+  }
+
+  // ---------- problem generation ----------
+  function generateProblem(){
+    if(state.mode === "sqrt"){
+      var n = randInt(1000, 9999);
+      var target = Math.sqrt(n);
+      var sigFigs = state.sqrtSigFigs;
+      var targetStr = target.toPrecision(sigFigs);
+      return {
+        mode: "sqrt",
+        modeKey: "sqrt-" + sigFigs,
+        sigFigs: sigFigs,
+        displayText: n.toLocaleString("en-US"),
+        target: targetStr,
+        targetNum: parseFloat(targetStr)
+      };
+    }
+    if(state.mode === "dayofweek"){
+      var year = randInt(1600, 2100);
+      var month = randInt(0, 11);
+      var daysInMonth = new Date(year, month + 1, 0).getDate();
+      var day = randInt(1, daysInMonth);
+      var dateObj = new Date(year, month, day);
+      var displayText = dateObj.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+      var correctWeekday = dateObj.toLocaleDateString("en-US", { weekday: "long" });
+      return {
+        mode: "dayofweek",
+        modeKey: "dayofweek",
+        displayText: displayText,
+        target: correctWeekday
+      };
+    }
+    if(state.mode === "cuberoot"){
+      var digits = state.cubeDigits;
+      var minR = digits === 1 ? 1 : Math.pow(10, digits - 1);
+      var maxR = Math.pow(10, digits) - 1;
+      var r = randInt(minR, maxR);
+      var rBig = BigInt(r);
+      var cBig = rBig * rBig * rBig;
+      return {
+        mode: "cuberoot",
+        modeKey: "cuberoot-" + digits,
+        displayText: commaFormat(cBig.toString()),
+        target: String(r),
+        rootBig: rBig
+      };
+    }
+    if(state.mode === "memory"){
+      var len = state.memoryDigits;
+      var digitChars = [];
+      for(var i = 0; i < len; i++){ digitChars.push(String(randInt(0, 9))); }
+      var seq = digitChars.join("");
+      var grouped = seq.match(/.{1,3}/g).join(" ");
+      return {
+        mode: "memory",
+        modeKey: "memory-" + len + "-" + state.memoryTimeSec,
+        displayText: grouped,
+        target: seq
+      };
+    }
+  }
+
+  // ---------- verification ----------
+  function checkAnswer(problem, raw){
+    var submittedDisplay = (raw === undefined || raw === null || raw === "") ? "(blank)" : String(raw).trim();
+    var status;
+
+    if(problem.mode === "sqrt"){
+      var userNum = parseFloat(raw);
+      if(isNaN(userNum)){
+        status = "Incorrect";
+      } else {
+        var userStr;
+        try{ userStr = userNum.toPrecision(problem.sigFigs); }catch(e){ userStr = null; }
+        var absDiff = Math.abs(userNum - problem.targetNum);
+        if(userStr === problem.target || absDiff < 1e-8){
+          status = "Correct";
+        } else {
+          var relErr = Math.abs(userNum - problem.targetNum) / problem.targetNum;
+          status = (relErr < 1e-4) ? "Margin Error" : "Incorrect";
+        }
+      }
+    } else if(problem.mode === "dayofweek"){
+      var norm = function(s){ return String(s || "").trim().toLowerCase(); };
+      status = (norm(raw) === norm(problem.target)) ? "Correct" : "Incorrect";
+    } else if(problem.mode === "cuberoot"){
+      var cleaned = String(raw || "").replace(/[,\s]/g, "");
+      var ok = false;
+      if(cleaned.length > 0 && /^-?\d+$/.test(cleaned)){
+        try{ ok = BigInt(cleaned) === problem.rootBig; }catch(e){ ok = false; }
+      }
+      status = ok ? "Correct" : "Incorrect";
+    } else if(problem.mode === "memory"){
+      var cleanedMem = String(raw || "").replace(/\s+/g, "");
+      status = (cleanedMem === problem.target) ? "Correct" : "Incorrect";
+    }
+
+    return {
+      status: status,
+      correctDisplay: problem.mode === "memory" ? problem.displayText : problem.target,
+      submittedDisplay: submittedDisplay
+    };
+  }
+
+  // ---------- rendering ----------
+  function renderProblem(){
+    els.problemDisplay.textContent = state.problem.displayText;
+  }
+
+  function renderModeUI(){
+    els.tabs.forEach(function(t){
+      t.classList.toggle("active", t.getAttribute("data-mode") === state.mode);
+    });
+    els.paramsSqrt.hidden = state.mode !== "sqrt";
+    els.paramsCube.hidden = state.mode !== "cuberoot";
+    els.paramsMemory.hidden = state.mode !== "memory";
+    els.weekdayButtons.hidden = state.mode !== "dayofweek";
+    els.memProgress.classList.remove("active");
+
+    if(state.mode === "sqrt"){
+      els.answerInput.inputMode = "decimal";
+      els.answerInput.placeholder = "Answer to " + state.sqrtSigFigs + " s.f.";
+    } else if(state.mode === "dayofweek"){
+      els.answerInput.inputMode = "text";
+      els.answerInput.placeholder = "Type weekday, or press 1–7";
+    } else if(state.mode === "cuberoot"){
+      els.answerInput.inputMode = "numeric";
+      els.answerInput.placeholder = "Enter the root";
+    } else if(state.mode === "memory"){
+      els.answerInput.inputMode = "numeric";
+      els.answerInput.placeholder = "Digits will flash, then type them back";
+    }
+  }
+
+  function buildWeekdayButtons(){
+    els.weekdayButtons.innerHTML = "";
+    WEEKDAYS.forEach(function(day, i){
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.innerHTML = '<span class="key">' + (i + 1) + "</span>" + day.slice(0, 3);
+      btn.setAttribute("data-day", day);
+      btn.addEventListener("click", function(){
+        if(state.phase !== "answering") return;
+        els.answerInput.value = day;
+        submitAnswer(day);
+      });
+      els.weekdayButtons.appendChild(btn);
+    });
+  }
+
+  function setWeekdayButtonsDisabled(disabled){
+    Array.prototype.forEach.call(els.weekdayButtons.querySelectorAll("button"), function(b){
+      b.disabled = disabled;
+    });
+  }
+
+  function renderFeedback(result, timeTaken){
+    els.feedback.classList.remove("correct", "incorrect", "margin");
+    var cls = result.status === "Correct" ? "correct" : (result.status === "Margin Error" ? "margin" : "incorrect");
+    els.feedback.classList.add(cls);
+
+    var line1 = result.status + " · " + timeTaken.toFixed(2) + "s";
+    var line2 = "You answered " + escapeHtml(result.submittedDisplay);
+    if(result.status !== "Correct"){
+      line2 += " — correct answer: " + escapeHtml(result.correctDisplay);
+    }
+    els.feedback.innerHTML =
+      '<div class="fb-status">' + escapeHtml(line1) + "</div>" +
+      '<div class="fb-detail">' + line2 + "</div>";
+    els.hint.textContent = "Press Enter or Space for next problem";
+  }
+
+  function clearFeedback(){
+    els.feedback.classList.remove("correct", "incorrect", "margin");
+    els.feedback.innerHTML = "";
+    els.hint.textContent = "Press Enter to submit";
+  }
+
+  function escapeHtml(str){
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function renderStats(){
+    var key = currentModeKey();
+    var entries = log.filter(function(e){ return e.modeKey === key; });
+    var total = entries.length;
+    var correctEntries = entries.filter(function(e){ return e.status === "Correct"; });
+    var accuracy = total ? (correctEntries.length / total * 100) : 0;
+    var avgTime = total ? (entries.reduce(function(s, e){ return s + e.timeTaken; }, 0) / total) : 0;
+    var best = correctEntries.length ? Math.min.apply(null, correctEntries.map(function(e){ return e.timeTaken; })) : null;
+
+    els.statAttempts.textContent = String(total);
+    els.statAccuracy.textContent = total ? (accuracy.toFixed(1) + "%") : "—";
+    els.statAvg.textContent = total ? (avgTime.toFixed(2) + "s") : "—";
+    els.statPB.textContent = best !== null ? (best.toFixed(2) + "s") : "—";
+  }
+
+  function renderHistory(){
+    if(els.historySection.hidden) return;
+    els.historyModeLabel.textContent = modeLabel(state.mode);
+    var key = currentModeKey();
+    var entries = log.filter(function(e){ return e.modeKey === key; });
+    renderCharts(entries);
+    renderSessionsTrend();
+    if(!entries.length){
+      els.historyBody.innerHTML = '<tr class="empty-row"><td colspan="6">No attempts logged yet for this mode.</td></tr>';
+      return;
+    }
+    var rows = entries.slice().reverse().map(function(e){
+      var statusClass = e.status === "Correct" ? "status-Correct" : (e.status === "Margin Error" ? "status-Margin" : "status-Incorrect");
+      var correctText = (e.correctAnswer !== undefined && e.correctAnswer !== null) ? e.correctAnswer : "—";
+      return "<tr>" +
+        "<td>" + escapeHtml(new Date(e.timestamp).toLocaleString()) + "</td>" +
+        "<td>" + escapeHtml(e.target) + "</td>" +
+        "<td>" + escapeHtml(e.submitted) + "</td>" +
+        "<td>" + escapeHtml(correctText) + "</td>" +
+        "<td>" + e.timeTaken.toFixed(2) + "s</td>" +
+        '<td class="' + statusClass + '">' + escapeHtml(e.status) + "</td>" +
+      "</tr>";
+    });
+    els.historyBody.innerHTML = rows.join("");
+  }
+
+  // ---------- charts ----------
+  function statusColor(status){
+    return status === "Correct" ? "var(--success)" : (status === "Margin Error" ? "var(--margin)" : "var(--error)");
+  }
+
+  function renderCharts(entries){
+    renderTimeChart(entries);
+    renderBreakdown(els.breakdownHolder, entries);
+  }
+
+  function renderLineChart(holder, points, colorFn, valueFormat){
+    if(!points.length){
+      holder.innerHTML = '<div class="chart-empty">No data yet</div>';
+      return;
+    }
+    var values = points.map(function(p){ return p.value; });
+    var maxV = Math.max.apply(null, values);
+    var minV = Math.min.apply(null, values);
+    var range = (maxV - minV) || 1;
+    var w = 600, h = 140, padL = 38, padR = 10, padT = 12, padB = 18;
+    var innerW = w - padL - padR, innerH = h - padT - padB;
+    var stepX = points.length > 1 ? innerW / (points.length - 1) : 0;
+
+    function xAt(i){ return padL + stepX * i; }
+    function yAt(v){ return padT + innerH - ((v - minV) / range) * innerH; }
+
+    var linePoints = points.map(function(p, i){
+      return xAt(i).toFixed(1) + "," + yAt(p.value).toFixed(1);
+    }).join(" ");
+
+    var dots = points.map(function(p, i){
+      var color = colorFn ? colorFn(p, i) : "var(--accent)";
+      return '<circle cx="' + xAt(i).toFixed(1) + '" cy="' + yAt(p.value).toFixed(1) + '" r="3.2" fill="' + color + '"><title>' +
+        escapeHtml(p.title || "") + '</title></circle>';
+    }).join("");
+
+    var fmt = valueFormat || function(v){ return v.toFixed(1); };
+
+    holder.innerHTML =
+      '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" style="width:100%;height:140px;display:block;">' +
+        '<line x1="' + padL + '" y1="' + padT + '" x2="' + padL + '" y2="' + (padT + innerH) + '" stroke="var(--border)" stroke-width="1"/>' +
+        '<line x1="' + padL + '" y1="' + (padT + innerH) + '" x2="' + (padL + innerW) + '" y2="' + (padT + innerH) + '" stroke="var(--border)" stroke-width="1"/>' +
+        '<text x="0" y="' + (padT + 4) + '" font-size="9" fill="var(--text-faint)">' + fmt(maxV) + '</text>' +
+        '<text x="0" y="' + (padT + innerH) + '" font-size="9" fill="var(--text-faint)">' + fmt(minV) + '</text>' +
+        '<polyline points="' + linePoints + '" fill="none" stroke="var(--text-faint)" stroke-width="1.4"/>' +
+        dots +
+      '</svg>';
+  }
+
+  function renderTimeChart(entries){
+    var recent = entries.slice(-25);
+    var points = recent.map(function(e){
+      return { value: e.timeTaken, title: e.timeTaken.toFixed(2) + "s \u00b7 " + e.status };
+    });
+    renderLineChart(els.timeChartHolder, points, function(p, i){ return statusColor(recent[i].status); }, function(v){ return v.toFixed(1) + "s"; });
+  }
+
+  function renderBreakdown(holder, entries){
+    if(!entries.length){
+      holder.innerHTML = '<div class="chart-empty">No data yet</div>';
+      return;
+    }
+    var total = entries.length;
+    var counts = { "Correct": 0, "Margin Error": 0, "Incorrect": 0 };
+    entries.forEach(function(e){ counts[e.status] = (counts[e.status] || 0) + 1; });
+
+    var segs = [
+      { key: "Correct", color: "var(--success)" },
+      { key: "Margin Error", color: "var(--margin)" },
+      { key: "Incorrect", color: "var(--error)" }
+    ];
+
+    var bar = segs.map(function(s){
+      var pct = counts[s.key] / total * 100;
+      if(pct <= 0) return "";
+      return '<div style="width:' + pct.toFixed(2) + '%;background:' + s.color + ';"></div>';
+    }).join("");
+
+    var rows = segs.map(function(s){
+      var pct = counts[s.key] / total * 100;
+      return '<div class="breakdown-row"><span><span class="dot" style="background:' + s.color + ';"></span>' + s.key +
+        '</span><span>' + counts[s.key] + ' \u00b7 ' + pct.toFixed(1) + '%</span></div>';
+    }).join("");
+
+    holder.innerHTML = '<div class="breakdown-bar">' + bar + '</div>' + rows;
+  }
+
+  function renderSessionTimeChart(holder, entries){
+    var points = entries.map(function(e, i){
+      return { value: e.timeTaken, title: "#" + (i + 1) + " \u00b7 " + e.timeTaken.toFixed(2) + "s \u00b7 " + e.status };
+    });
+    renderLineChart(holder, points, function(p, i){ return statusColor(entries[i].status); }, function(v){ return v.toFixed(1) + "s"; });
+  }
+
+  // ---------- sessions ----------
+  function renderSessionsTrend(){
+    var recent = sessions.slice(-15);
+    if(!recent.length){
+      els.sessionsAccChart.innerHTML = '<div class="chart-empty">No sessions recorded yet — press Start, then Stop when done</div>';
+      els.sessionsTimeChart.innerHTML = '<div class="chart-empty">No sessions yet</div>';
+      return;
+    }
+    var maxH = 90;
+    var baseIndex = sessions.length - recent.length;
+    var bars = recent.map(function(s, i){
+      var h = Math.max(2, (s.accuracy / 100) * maxH);
+      var color = s.accuracy >= 80 ? "var(--success)" : (s.accuracy >= 50 ? "var(--margin)" : "var(--error)");
+      var label = "Session " + (baseIndex + i + 1) + " \u00b7 " + s.accuracy.toFixed(1) + "% \u00b7 " + new Date(s.endedAt).toLocaleDateString();
+      return '<div class="sess-bar" data-session-id="' + escapeHtml(s.id) + '" style="height:' + h.toFixed(1) + 'px;background:' + color + ';" title="' + escapeHtml(label) + '"></div>';
+    }).join("");
+    els.sessionsAccChart.innerHTML = '<div class="sess-bars">' + bars + '</div>';
+    Array.prototype.forEach.call(els.sessionsAccChart.querySelectorAll(".sess-bar"), function(bar){
+      bar.addEventListener("click", function(){ openSessionReport(bar.getAttribute("data-session-id")); });
+    });
+
+    var timePoints = recent.map(function(s, i){
+      return { value: s.avgTime, title: "Session " + (baseIndex + i + 1) + " \u00b7 " + s.avgTime.toFixed(2) + "s avg" };
+    });
+    renderLineChart(els.sessionsTimeChart, timePoints, null, function(v){ return v.toFixed(2) + "s"; });
+
+    renderSessionsList();
+  }
+
+  function accClass(acc){
+    return acc >= 80 ? "acc-good" : (acc >= 50 ? "acc-mid" : "acc-bad");
+  }
+
+  function renderSessionsList(){
+    var recent = sessions.slice().reverse().slice(0, 30);
+    if(!recent.length){
+      els.sessionsList.innerHTML = '<div class="chart-empty">No sessions recorded yet</div>';
+      return;
+    }
+    els.sessionsList.innerHTML = recent.map(function(s){
+      var dateStr = new Date(s.endedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      var modesText = (s.modes && s.modes.length) ? s.modes.join(", ") : "";
+      return '<div class="session-row" data-session-id="' + escapeHtml(s.id) + '">' +
+        '<div class="session-row-left">' +
+          '<div class="session-row-date">' + escapeHtml(dateStr) + " \u00b7 " + escapeHtml(formatSessionRange(s, true)) + '</div>' +
+          '<div class="session-row-modes">' + escapeHtml(modesText) + '</div>' +
+        '</div>' +
+        '<div class="session-row-right">' +
+          '<div class="session-row-stat"><span class="v ' + accClass(s.accuracy) + '">' + s.accuracy.toFixed(0) + '%</span><span class="l">Acc</span></div>' +
+          '<div class="session-row-stat"><span class="v">' + s.avgTime.toFixed(2) + 's</span><span class="l">Avg</span></div>' +
+          '<div class="session-row-stat"><span class="v">' + s.total + '</span><span class="l">Reps</span></div>' +
+        '</div>' +
+      '</div>';
+    }).join("");
+    Array.prototype.forEach.call(els.sessionsList.querySelectorAll(".session-row"), function(row){
+      row.addEventListener("click", function(){ openSessionReport(row.getAttribute("data-session-id")); });
+    });
+  }
+
+  function formatSessionRange(summary, timeOnly){
+    var end = new Date(summary.endedAt);
+    var endTime = end.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+    if(timeOnly){
+      if(summary.startedAt){
+        var st = new Date(summary.startedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+        return st + "\u2013" + endTime;
+      }
+      return endTime;
+    }
+    var dateStr = end.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+    if(summary.startedAt){
+      var startTime = new Date(summary.startedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+      return dateStr + " \u00b7 " + startTime + " \u2013 " + endTime;
+    }
+    return dateStr + " \u00b7 " + endTime;
+  }
+
+  function openSessionReport(sessionId){
+    var idx = sessions.findIndex(function(s){ return s.id === sessionId; });
+    if(idx === -1) return;
+    var summary = sessions[idx];
+    var prev = idx > 0 ? sessions[idx - 1] : null;
+    var entries = log.filter(function(e){ return e.sessionId === sessionId; });
+    renderReportCard(summary, prev, entries, false);
+  }
+
+  function finalizeSession(){
+    var entries = log.filter(function(e){ return e.sessionId === state.sessionId; });
+    if(!entries.length) return;
+
+    var total = entries.length;
+    var correctEntries = entries.filter(function(e){ return e.status === "Correct"; });
+    var accuracy = correctEntries.length / total * 100;
+    var avgTime = entries.reduce(function(s, e){ return s + e.timeTaken; }, 0) / total;
+    var bestTime = correctEntries.length ? Math.min.apply(null, correctEntries.map(function(e){ return e.timeTaken; })) : null;
+    var bestStreak = 0, cur = 0;
+    entries.forEach(function(e){
+      if(e.status === "Correct"){ cur++; bestStreak = Math.max(bestStreak, cur); } else { cur = 0; }
+    });
+    var modesUsed = [];
+    entries.forEach(function(e){ if(modesUsed.indexOf(e.modeLabel) === -1) modesUsed.push(e.modeLabel); });
+
+    var summary = {
+      id: state.sessionId,
+      startedAt: state.sessionStartedAt,
+      endedAt: new Date().toISOString(),
+      total: total,
+      accuracy: accuracy,
+      avgTime: avgTime,
+      bestTime: bestTime,
+      bestStreak: bestStreak,
+      durationMs: state.sessionElapsedMs,
+      modes: modesUsed
+    };
+
+    var prev = sessions.length ? sessions[sessions.length - 1] : null;
+    sessions.push(summary);
+    saveSessions();
+
+    renderReportCard(summary, prev, entries, true);
+    if(!els.historySection.hidden) renderSessionsTrend();
+  }
+
+  var RING_C = 2 * Math.PI * 70;
+  var lastReportSummary = null;
+  var lastReportEntries = null;
+
+  function tierColors(acc){
+    if(acc >= 80) return { a: "#5cd98a", b: "#e6cf63", glow: "rgba(92,217,138,0.55)" };
+    if(acc >= 50) return { a: "#e6cf63", b: "#e0a955", glow: "rgba(230,207,99,0.5)" };
+    return { a: "#ff6b6b", b: "#e2665f", glow: "rgba(255,107,107,0.5)" };
+  }
+
+  function renderReportCard(summary, prev, entries, justFinished){
+    lastReportSummary = summary;
+    lastReportEntries = entries || [];
+
+    var theme = tierColors(summary.accuracy);
+    els.reportCard.style.setProperty("--r-a", theme.a);
+    els.reportCard.style.setProperty("--r-glow", theme.glow);
+
+    els.reportTitle.textContent = justFinished ? "Session complete" : "Session report";
+    els.reportRange.textContent = formatSessionRange(summary, false);
+    els.reportModes.innerHTML = (summary.modes && summary.modes.length) ?
+      summary.modes.map(function(m){ return '<span class="pill">' + escapeHtml(m) + '</span>'; }).join("") : "";
+
+    els.ringProgress.style.transition = "none";
+    els.ringProgress.style.strokeDashoffset = String(RING_C);
+    els.ringValue.textContent = "0%";
+    void els.ringProgress.getBoundingClientRect();
+    els.ringProgress.style.transition = "";
+    var targetOffset = RING_C * (1 - Math.max(0, Math.min(100, summary.accuracy)) / 100);
+    requestAnimationFrame(function(){
+      els.ringProgress.style.strokeDashoffset = String(targetOffset);
+      els.ringValue.textContent = Math.round(summary.accuracy) + "%";
+    });
+
+    var items = [
+      { label: "Attempts", value: String(summary.total) },
+      { label: "Avg time", value: summary.avgTime.toFixed(2) + "s" },
+      { label: "Best time", value: summary.bestTime !== null ? summary.bestTime.toFixed(2) + "s" : "—" },
+      { label: "Best streak", value: String(summary.bestStreak) },
+      { label: "Duration", value: formatStopwatch(summary.durationMs) },
+      { label: "Correct", value: (entries || []).filter(function(e){ return e.status === "Correct"; }).length + "/" + summary.total }
+    ];
+    els.reportGrid.innerHTML = items.map(function(it){
+      return '<div class="report-stat"><div class="value">' + escapeHtml(it.value) + '</div><div class="label">' + it.label + '</div></div>';
+    }).join("");
+
+    renderSessionTimeChart(els.reportTimeChart, entries || []);
+    renderBreakdown(els.reportBreakdown, entries || []);
+
+    if(prev){
+      var accDelta = summary.accuracy - prev.accuracy;
+      var timeDelta = summary.avgTime - prev.avgTime;
+      var accText = (accDelta >= 0 ? "+" : "") + accDelta.toFixed(1) + "pt accuracy";
+      var timeText = (timeDelta <= 0 ? "\u2212" : "+") + Math.abs(timeDelta).toFixed(2) + "s avg time";
+      var accClassName = accDelta >= 0 ? "up" : "down";
+      var timeClassName = timeDelta <= 0 ? "up" : "down";
+      els.reportCompare.innerHTML = "Vs. previous session: <span class=\"" + accClassName + "\">" + accText + "</span> \u00b7 <span class=\"" + timeClassName + "\">" + timeText + "</span>";
+    } else {
+      els.reportCompare.textContent = "First recorded session — nice start.";
+    }
+
+    els.reportOverlay.hidden = false;
+  }
+
+  function closeReport(){
+    els.reportOverlay.hidden = true;
+  }
+
+  // ---------- PNG export ----------
+  function roundRectPath(ctx, x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function downloadReportPNG(){
+    if(!lastReportSummary) return;
+    var summary = lastReportSummary;
+    var entries = lastReportEntries || [];
+    var theme = tierColors(summary.accuracy);
+    var FONT = "-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+    var MONO = "'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace";
+
+    var scale = 3;
+    var w = 480, h = 760;
+    var canvas = document.createElement("canvas");
+    canvas.width = w * scale;
+    canvas.height = h * scale;
+    var ctx = canvas.getContext("2d");
+    ctx.scale(scale, scale);
+
+    // card background
+    roundRectPath(ctx, 0, 0, w, h, 30);
+    var bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+    bgGrad.addColorStop(0, "#141414");
+    bgGrad.addColorStop(0.4, "#060606");
+    bgGrad.addColorStop(1, "#000000");
+    ctx.fillStyle = bgGrad;
+    ctx.fill();
+
+    // glow behind ring
+    var glow = ctx.createRadialGradient(w / 2, 210, 10, w / 2, 210, 260);
+    glow.addColorStop(0, theme.glow);
+    glow.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.save();
+    roundRectPath(ctx, 0, 0, w, h, 30);
+    ctx.clip();
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, w, h);
+    ctx.restore();
+
+    // border
+    roundRectPath(ctx, 1, 1, w - 2, h - 2, 29);
+    ctx.strokeStyle = "rgba(255,255,255,0.1)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    var cx = w / 2;
+    ctx.textAlign = "center";
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "800 22px " + FONT;
+    ctx.fillText("Session Report", cx, 46);
+
+    ctx.fillStyle = "#a8a8a8";
+    ctx.font = "500 13px " + FONT;
+    ctx.fillText(formatSessionRange(summary, false), cx, 68);
+
+    if(summary.modes && summary.modes.length){
+      ctx.fillStyle = "#dcdcdc";
+      ctx.font = "600 11.5px " + FONT;
+      ctx.fillText(summary.modes.join("   \u00b7   "), cx, 89);
+    }
+
+    // ring
+    var ringCy = 205, ringR = 74;
+    ctx.lineWidth = 13;
+    ctx.strokeStyle = "rgba(255,255,255,0.09)";
+    ctx.beginPath();
+    ctx.arc(cx, ringCy, ringR, 0, Math.PI * 2);
+    ctx.stroke();
+
+    var pct = Math.max(0, Math.min(100, summary.accuracy)) / 100;
+    var ringGrad = ctx.createLinearGradient(cx - ringR, ringCy - ringR, cx + ringR, ringCy + ringR);
+    ringGrad.addColorStop(0, theme.a);
+    ringGrad.addColorStop(1, theme.b);
+    ctx.strokeStyle = ringGrad;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.arc(cx, ringCy, ringR, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct);
+    ctx.stroke();
+    ctx.lineCap = "butt";
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "800 42px " + MONO;
+    ctx.fillText(Math.round(summary.accuracy) + "%", cx, ringCy + 15);
+    ctx.fillStyle = "#8f8f8f";
+    ctx.font = "700 11px " + FONT;
+    ctx.fillText("ACCURACY", cx, ringCy + 36);
+
+    // stat grid
+    var stats = [
+      { label: "ATTEMPTS", value: String(summary.total) },
+      { label: "AVG TIME", value: summary.avgTime.toFixed(2) + "s" },
+      { label: "BEST TIME", value: summary.bestTime !== null ? summary.bestTime.toFixed(2) + "s" : "—" },
+      { label: "BEST STREAK", value: String(summary.bestStreak) },
+      { label: "DURATION", value: formatStopwatch(summary.durationMs) },
+      { label: "CORRECT", value: entries.filter(function(e){ return e.status === "Correct"; }).length + "/" + summary.total }
+    ];
+    var gridTop = 316, gridGap = 9, cellW = (w - 44 - gridGap * 2) / 3, cellH = 62;
+    stats.forEach(function(s, i){
+      var col = i % 3, row = Math.floor(i / 3);
+      var x = 22 + col * (cellW + gridGap);
+      var y = gridTop + row * (cellH + gridGap);
+      roundRectPath(ctx, x, y, cellW, cellH, 14);
+      ctx.fillStyle = "rgba(255,255,255,0.04)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.08)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "800 17px " + MONO;
+      ctx.fillText(s.value, x + cellW / 2, y + 28);
+      ctx.fillStyle = "#8f8f8f";
+      ctx.font = "700 9px " + FONT;
+      ctx.fillText(s.label, x + cellW / 2, y + 46);
+    });
+
+    var afterGrid = gridTop + 2 * (cellH + gridGap) + 18;
+
+    // response time mini chart
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#9a9a9a";
+    ctx.font = "700 10.5px " + FONT;
+    ctx.fillText("RESPONSE TIME", 22, afterGrid);
+    var chartTop = afterGrid + 12, chartH = 60, chartX = 22, chartW = w - 44;
+    var recentEntries = entries.slice(-20);
+    if(recentEntries.length){
+      var times = recentEntries.map(function(e){ return e.timeTaken; });
+      var maxT = Math.max.apply(null, times), minT = Math.min.apply(null, times);
+      var range = (maxT - minT) || 1;
+      var stepX = recentEntries.length > 1 ? chartW / (recentEntries.length - 1) : 0;
+      ctx.beginPath();
+      recentEntries.forEach(function(e, i){
+        var px = chartX + stepX * i;
+        var py = chartTop + chartH - ((e.timeTaken - minT) / range) * chartH;
+        if(i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      });
+      ctx.strokeStyle = "rgba(255,255,255,0.35)";
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+      recentEntries.forEach(function(e, i){
+        var px = chartX + stepX * i;
+        var py = chartTop + chartH - ((e.timeTaken - minT) / range) * chartH;
+        ctx.beginPath();
+        ctx.arc(px, py, 2.6, 0, Math.PI * 2);
+        ctx.fillStyle = e.status === "Correct" ? "#5cd98a" : (e.status === "Margin Error" ? "#e6cf63" : "#ff6b6b");
+        ctx.fill();
+      });
+    } else {
+      ctx.fillStyle = "#666";
+      ctx.font = "500 12px " + FONT;
+      ctx.fillText("No data", chartX, chartTop + chartH / 2);
+    }
+
+    var breakdownTop = chartTop + chartH + 30;
+    ctx.fillStyle = "#9a9a9a";
+    ctx.font = "700 10.5px " + FONT;
+    ctx.fillText("OUTCOME BREAKDOWN", 22, breakdownTop);
+
+    var barTop = breakdownTop + 12, barH = 10;
+    var total = entries.length || 1;
+    var counts = { "Correct": 0, "Margin Error": 0, "Incorrect": 0 };
+    entries.forEach(function(e){ counts[e.status] = (counts[e.status] || 0) + 1; });
+    var segs = [
+      { key: "Correct", color: "#5cd98a" },
+      { key: "Margin Error", color: "#e6cf63" },
+      { key: "Incorrect", color: "#ff6b6b" }
+    ];
+    var bx = chartX;
+    roundRectPath(ctx, chartX, barTop, chartW, barH, 5);
+    ctx.fillStyle = "rgba(255,255,255,0.06)";
+    ctx.fill();
+    segs.forEach(function(s){
+      var segW = (counts[s.key] / total) * chartW;
+      if(segW > 0){
+        ctx.fillStyle = s.color;
+        ctx.fillRect(bx, barTop, segW, barH);
+        bx += segW;
+      }
+    });
+
+    var legendY = barTop + barH + 20;
+    var legendX = chartX;
+    ctx.font = "600 10.5px " + MONO;
+    segs.forEach(function(s){
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      ctx.arc(legendX + 4, legendY - 3, 4, 0, Math.PI * 2);
+      ctx.fill();
+      var label = s.key + " " + counts[s.key];
+      ctx.fillStyle = "#cfcfcf";
+      ctx.fillText(label, legendX + 12, legendY);
+      legendX += ctx.measureText(label).width + 34;
+    });
+
+    // footer
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#565656";
+    ctx.font = "600 10px " + FONT;
+    ctx.fillText("Mental Math Trainer \u00b7 generated " + new Date().toLocaleDateString(), cx, h - 20);
+
+    canvas.toBlob(function(blob){
+      if(!blob) return;
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "mental-math-session-" + new Date(summary.endedAt).toISOString().slice(0, 10) + ".png";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, "image/png");
+  }
+
+  // ---------- stopwatch ----------
+  function pad2(n){ return n < 10 ? "0" + n : String(n); }
+
+  function formatStopwatch(ms){
+    var totalMs = Math.max(0, Math.floor(ms));
+    var minutes = Math.floor(totalMs / 60000);
+    var seconds = Math.floor((totalMs % 60000) / 1000);
+    var tenths = Math.floor((totalMs % 1000) / 100);
+    return pad2(minutes) + ":" + pad2(seconds) + "." + tenths;
+  }
+
+  function currentSessionElapsedMs(){
+    if(state.sessionRunStart === null) return state.sessionElapsedMs;
+    return state.sessionElapsedMs + (performance.now() - state.sessionRunStart);
+  }
+
+  function tickStopwatch(){
+    els.stopwatch.textContent = formatStopwatch(currentSessionElapsedMs());
+  }
+
+  function startStopwatch(){
+    state.sessionElapsedMs = 0;
+    state.sessionRunStart = performance.now();
+    if(state.stopwatchIntervalId) clearInterval(state.stopwatchIntervalId);
+    state.stopwatchIntervalId = setInterval(tickStopwatch, 100);
+    tickStopwatch();
+  }
+
+  function stopStopwatch(){
+    if(state.sessionRunStart !== null){
+      state.sessionElapsedMs += performance.now() - state.sessionRunStart;
+      state.sessionRunStart = null;
+    }
+    if(state.stopwatchIntervalId){
+      clearInterval(state.stopwatchIntervalId);
+      state.stopwatchIntervalId = null;
+    }
+    tickStopwatch();
+  }
+
+  // ---------- idle / session state ----------
+  function enterIdle(){
+    state.phase = "idle";
+    if(state.memoryTimeoutId){
+      clearTimeout(state.memoryTimeoutId);
+      state.memoryTimeoutId = null;
+    }
+    els.answerInput.disabled = true;
+    setWeekdayButtonsDisabled(true);
+    els.memProgress.classList.remove("active");
+  }
+
+  function resetStage(){
+    enterIdle();
+    els.problemDisplay.textContent = "Press Start";
+    clearFeedback();
+    els.answerInput.value = "";
+    els.hint.textContent = "Press Start to begin";
+  }
+
+  // ---------- flow ----------
+  function nextProblem(){
+    if(!state.started) return;
+    if(state.memoryTimeoutId){
+      clearTimeout(state.memoryTimeoutId);
+      state.memoryTimeoutId = null;
+    }
+    state.problem = generateProblem();
+    clearFeedback();
+
+    if(state.mode === "memory"){
+      startMemoryShowing();
+    } else {
+      startAnswering();
+    }
+  }
+
+  function startAnswering(){
+    state.phase = "answering";
+    state.startTime = performance.now();
+
+    renderProblem();
+    els.answerInput.disabled = false;
+    els.answerInput.value = "";
+    setWeekdayButtonsDisabled(false);
+    els.answerInput.focus();
+  }
+
+  function startMemoryShowing(){
+    state.phase = "memory-showing";
+    els.problemDisplay.textContent = state.problem.displayText;
+    els.answerInput.disabled = true;
+    els.answerInput.value = "";
+    els.hint.textContent = "Memorize…";
+
+    els.memProgress.classList.add("active");
+    els.memProgressFill.style.transition = "none";
+    els.memProgressFill.style.width = "100%";
+    void els.memProgressFill.offsetWidth;
+
+    var ms = Math.round(state.memoryTimeSec * 1000);
+    els.memProgressFill.style.transition = "width " + ms + "ms linear";
+    els.memProgressFill.style.width = "0%";
+
+    state.memoryTimeoutId = setTimeout(function(){
+      state.memoryTimeoutId = null;
+      els.memProgress.classList.remove("active");
+      var dots = state.problem.target.split("").map(function(){ return "•"; }).join(" ");
+      els.problemDisplay.textContent = dots;
+      els.answerInput.placeholder = "Type what you saw";
+      els.hint.textContent = "Press Enter to submit";
+      state.phase = "answering";
+      state.startTime = performance.now();
+      els.answerInput.disabled = false;
+      els.answerInput.focus();
+    }, ms);
+  }
+
+  function submitAnswer(raw){
+    if(state.phase !== "answering") return;
+    var elapsed = (performance.now() - state.startTime) / 1000;
+    var problem = state.problem;
+    var result = checkAnswer(problem, raw);
+
+    log.push({
+      timestamp: new Date().toISOString(),
+      sessionId: state.sessionId,
+      modeLabel: modeLabel(problem.mode),
+      modeKey: problem.modeKey,
+      target: problem.displayText,
+      correctAnswer: result.correctDisplay,
+      submitted: result.submittedDisplay,
+      timeTaken: elapsed,
+      status: result.status
+    });
+    saveLog();
+
+    renderFeedback(result, elapsed);
+    renderStats();
+    renderHistory();
+
+    state.phase = "reviewing";
+    els.answerInput.disabled = true;
+    setWeekdayButtonsDisabled(true);
+  }
+
+  // ---------- events ----------
+  els.tabs.forEach(function(tab){
+    tab.addEventListener("click", function(){
+      var mode = tab.getAttribute("data-mode");
+      if(mode === state.mode) return;
+      state.mode = mode;
+      renderModeUI();
+      renderStats();
+      if(state.started){
+        nextProblem();
+      } else {
+        resetStage();
+      }
+    });
+  });
+
+  els.startStopBtn.addEventListener("click", function(){
+    if(state.started){
+      state.started = false;
+      els.startStopBtn.textContent = "Start";
+      els.startStopBtn.classList.remove("stop-state");
+      stopStopwatch();
+      finalizeSession();
+      enterIdle();
+      els.hint.textContent = "Press Start to resume";
+    } else {
+      state.started = true;
+      state.sessionId = "s" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+      state.sessionStartedAt = new Date().toISOString();
+      els.startStopBtn.textContent = "Stop";
+      els.startStopBtn.classList.add("stop-state");
+      startStopwatch();
+      nextProblem();
+    }
+  });
+
+  els.reportCloseBtn.addEventListener("click", closeReport);
+  els.reportDownloadBtn.addEventListener("click", downloadReportPNG);
+  els.reportOverlay.addEventListener("click", function(e){
+    if(e.target === els.reportOverlay) closeReport();
+  });
+
+  els.sqrtSigSlider.addEventListener("input", function(){
+    state.sqrtSigFigs = parseInt(els.sqrtSigSlider.value, 10);
+    els.sqrtSigValue.textContent = String(state.sqrtSigFigs);
+    if(state.mode === "sqrt"){
+      els.answerInput.placeholder = "Answer to " + state.sqrtSigFigs + " s.f.";
+      renderStats();
+      nextProblem();
+    }
+  });
+
+  els.digitSlider.addEventListener("input", function(){
+    state.cubeDigits = parseInt(els.digitSlider.value, 10);
+    els.digitValue.textContent = String(state.cubeDigits);
+    if(state.mode === "cuberoot"){
+      renderStats();
+      nextProblem();
+    }
+  });
+
+  els.memDigitsSlider.addEventListener("input", function(){
+    state.memoryDigits = parseInt(els.memDigitsSlider.value, 10);
+    els.memDigitsValue.textContent = String(state.memoryDigits);
+    if(state.mode === "memory"){
+      renderStats();
+      nextProblem();
+    }
+  });
+
+  els.memTimeSlider.addEventListener("input", function(){
+    state.memoryTimeSec = parseFloat(els.memTimeSlider.value);
+    els.memTimeValue.textContent = state.memoryTimeSec.toFixed(1) + "s";
+    if(state.mode === "memory"){
+      renderStats();
+      nextProblem();
+    }
+  });
+
+  document.addEventListener("keydown", function(e){
+    if(!els.reportOverlay.hidden){
+      if(e.key === "Enter" || e.key === "Escape" || e.key === " "){
+        e.preventDefault();
+        closeReport();
+      }
+      return;
+    }
+    if(e.target && e.target.tagName === "BUTTON") return;
+    if(state.phase === "idle" || state.phase === "memory-showing") return;
+    if(state.phase === "reviewing"){
+      if(e.key === "Enter" || e.key === " "){
+        e.preventDefault();
+        nextProblem();
+      }
+      return;
+    }
+    // answering phase
+    if(state.mode === "dayofweek" && /^[1-7]$/.test(e.key)){
+      e.preventDefault();
+      var chosenDay = WEEKDAYS[parseInt(e.key, 10) - 1];
+      els.answerInput.value = chosenDay;
+      submitAnswer(chosenDay);
+      return;
+    }
+    if(e.key === "Enter"){
+      e.preventDefault();
+      submitAnswer(els.answerInput.value);
+    }
+  });
+
+  els.toggleHistory.addEventListener("click", function(){
+    els.historySection.hidden = !els.historySection.hidden;
+    els.toggleHistory.textContent = els.historySection.hidden ? "Show history" : "Hide history";
+    if(!els.historySection.hidden) renderHistory();
+  });
+
+  els.exportCsv.addEventListener("click", function(){
+    var header = ["Timestamp", "Mode", "Target Problem", "Submitted Answer", "Correct Answer", "Time Taken (s)", "Status"];
+    var lines = [header.join(",")];
+    log.forEach(function(e){
+      var row = [
+        new Date(e.timestamp).toLocaleString(),
+        e.modeLabel,
+        e.target,
+        e.submitted,
+        (e.correctAnswer !== undefined && e.correctAnswer !== null) ? e.correctAnswer : "",
+        e.timeTaken.toFixed(3),
+        e.status
+      ].map(function(field){
+        var f = String(field).replace(/"/g, '""');
+        return /[",\n]/.test(f) ? '"' + f + '"' : f;
+      });
+      lines.push(row.join(","));
+    });
+    var csv = lines.join("\r\n");
+    try{
+      var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "mental-math-log-" + new Date().toISOString().slice(0, 10) + ".csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }catch(err){
+      alert("Export failed in this environment.");
+    }
+  });
+
+  els.clearHistory.addEventListener("click", function(){
+    var key = currentModeKey();
+    var hasEntries = log.some(function(e){ return e.modeKey === key; });
+    if(!hasEntries){ return; }
+    var confirmed = window.confirm('Clear history for "' + modeLabel(state.mode) + '"? This cannot be undone.');
+    if(!confirmed) return;
+    log = log.filter(function(e){ return e.modeKey !== key; });
+    saveLog();
+    renderStats();
+    renderHistory();
+  });
+
+  // ---------- init ----------
+  buildWeekdayButtons();
+  renderModeUI();
+  renderStats();
+  resetStage();
+  tickStopwatch();
+})();
+</script>
+</body>
+</html>
