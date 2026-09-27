@@ -7,22 +7,22 @@
 <title>Mental Math Trainer</title>
 <style>
   :root{
-    --bg:#111318;
-    --surface:#171a20;
-    --surface-2:#1d2129;
-    --border:#2a2e37;
-    --border-soft:#22262e;
-    --text:#e9e7e1;
-    --text-dim:#8b8f98;
-    --text-faint:#565a63;
-    --accent:#e0a955;
-    --accent-soft:#3a2f1c;
-    --success:#5cbf7a;
-    --success-soft:#1c2a1f;
-    --error:#e2665f;
-    --error-soft:#2c1c1b;
-    --margin:#e0c355;
-    --margin-soft:#2c2718;
+    --bg:#000000;
+    --surface:#0a0a0a;
+    --surface-2:#121212;
+    --border:#3a3a3a;
+    --border-soft:#262626;
+    --text:#ffffff;
+    --text-dim:#d0d0d0;
+    --text-faint:#9a9a9a;
+    --accent:#ffb800;
+    --accent-soft:#3a2600;
+    --success:#00e676;
+    --success-soft:#0a2b16;
+    --error:#ff1744;
+    --error-soft:#2b0810;
+    --margin:#ffd60a;
+    --margin-soft:#2b2400;
     --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, "Liberation Mono", monospace;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
@@ -194,6 +194,23 @@
     margin-bottom:22px;
   }
   .answer-row{ width:100%; max-width:340px; }
+  .action-btn{
+    width:100%;
+    max-width:340px;
+    margin-top:10px;
+    appearance:none;
+    background:var(--accent-soft);
+    border:1px solid var(--accent);
+    color:var(--accent);
+    font-family:var(--sans);
+    font-weight:700;
+    font-size:14px;
+    padding:12px;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  .action-btn:hover:not(:disabled){ filter:brightness(1.12); }
+  .action-btn:disabled{ opacity:.4; cursor:default; }
   #answerInput{
     width:100%;
     background:var(--surface);
@@ -315,6 +332,7 @@
   }
   .controls button:hover{ color:var(--text); border-color:var(--accent); }
   #clearHistory:hover{ color:var(--error); border-color:var(--error); }
+  #clearAllData:hover{ color:var(--error); border-color:var(--error); }
 
   .sess-bars{
     display:flex;
@@ -370,13 +388,13 @@
     isolation:isolate;
     background:radial-gradient(120% 90% at 50% -10%, #141414 0%, #050505 55%, #000 100%);
     border:1px solid rgba(255,255,255,0.09);
-    border-radius:24px;
+    border-radius:0;
     padding:30px 24px 24px;
     max-width:420px;
     width:100%;
     max-height:90vh;
     overflow-y:auto;
-    color:#f4f3f0;
+    color:#ffffff;
     box-shadow:0 40px 90px rgba(0,0,0,0.65), 0 0 60px -20px var(--r-glow, rgba(224,169,85,0.4));
     animation:reportPop .42s cubic-bezier(.19,1,.22,1);
   }
@@ -388,15 +406,18 @@
 
   .report-top{ text-align:center; }
   .report-title{
-    font-size:20px;
+    font-size:21px;
     font-weight:800;
     letter-spacing:-0.01em;
-    color:#fff;
+    background:linear-gradient(90deg, var(--r-a, #ffd60a), var(--r-b, #ff9100));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
   }
   .report-range{
     font-size:12.5px;
-    color:#a8a8a8;
-    margin-top:5px;
+    color:#e0e0e0;
+    margin-top:6px;
   }
   .report-modes{
     display:flex;
@@ -407,12 +428,12 @@
   }
   .report-modes .pill{
     font-size:10.5px;
-    font-weight:600;
+    font-weight:700;
     padding:4px 11px;
-    border-radius:999px;
-    background:rgba(255,255,255,0.06);
-    border:1px solid rgba(255,255,255,0.12);
-    color:#dcdcdc;
+    border-radius:0;
+    background:color-mix(in srgb, var(--r-a, #e0a955) 14%, transparent);
+    border:1px solid color-mix(in srgb, var(--r-a, #e0a955) 45%, transparent);
+    color:var(--r-a, #e0a955);
     white-space:nowrap;
   }
 
@@ -448,19 +469,21 @@
     font-weight:800;
     letter-spacing:-0.02em;
     color:#fff;
+    text-shadow:0 0 22px var(--r-glow, rgba(224,169,85,0.6));
   }
   .ring-label{
     font-size:10.5px;
-    color:#8f8f8f;
+    color:var(--r-a, #e0a955);
     text-transform:uppercase;
     letter-spacing:.09em;
     margin-top:3px;
+    font-weight:700;
   }
 
   .report-section-title{
     font-size:10.5px;
-    font-weight:700;
-    color:#9a9a9a;
+    font-weight:800;
+    color:var(--r-a, #e0a955);
     text-transform:uppercase;
     letter-spacing:0.07em;
     margin:20px 0 9px;
@@ -472,38 +495,46 @@
     margin:20px 0 4px;
   }
   .report-stat{
+    --tile-c:#e0e0e0;
     background:linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015));
     border:1px solid rgba(255,255,255,0.08);
-    border-radius:14px;
-    padding:13px 6px 11px;
+    border-top:2px solid var(--tile-c);
+    border-radius:0;
+    padding:12px 6px 11px;
     text-align:center;
   }
+  .report-grid .report-stat:nth-child(1){ --tile-c:#00d4ff; }
+  .report-grid .report-stat:nth-child(2){ --tile-c:#b026ff; }
+  .report-grid .report-stat:nth-child(3){ --tile-c:#ffd60a; }
+  .report-grid .report-stat:nth-child(4){ --tile-c:#00e676; }
+  .report-grid .report-stat:nth-child(5){ --tile-c:#ff2d78; }
+  .report-grid .report-stat:nth-child(6){ --tile-c:#ff6d00; }
   .report-stat .value{
     font-family:var(--mono);
     font-size:17px;
     font-weight:800;
-    color:#fff;
+    color:var(--tile-c);
     letter-spacing:-0.01em;
   }
   .report-stat .label{
     font-size:9.5px;
-    color:#8f8f8f;
+    color:#c9c9c9;
     text-transform:uppercase;
     letter-spacing:.05em;
     margin-top:4px;
   }
   .report-compare{
     font-size:12.5px;
-    color:#c4c4c4;
+    color:#e0e0e0;
     margin-top:18px;
     padding:13px 14px;
-    border-radius:14px;
-    background:rgba(255,255,255,0.045);
-    border:1px solid rgba(255,255,255,0.09);
+    border-radius:0;
+    background:color-mix(in srgb, var(--r-a, #e0a955) 8%, rgba(255,255,255,0.03));
+    border:1px solid color-mix(in srgb, var(--r-a, #e0a955) 30%, rgba(255,255,255,0.09));
     text-align:center;
   }
-  .report-compare .up{ color:#5cd98a; font-weight:700; }
-  .report-compare .down{ color:#ff6b6b; font-weight:700; }
+  .report-compare .up{ color:#00e676; font-weight:700; }
+  .report-compare .down{ color:#ff1744; font-weight:700; }
   .report-actions{
     display:flex;
     gap:10px;
@@ -512,7 +543,7 @@
   .report-btn{
     flex:1;
     appearance:none;
-    border-radius:12px;
+    border-radius:0;
     padding:13px;
     font-family:var(--sans);
     font-weight:700;
@@ -527,8 +558,8 @@
   .report-btn.primary:hover{ filter:brightness(.92); }
   .report-btn.ghost{
     background:transparent;
-    border:1px solid rgba(255,255,255,0.22);
-    color:#f4f3f0;
+    border:1px solid rgba(255,255,255,0.3);
+    color:#ffffff;
   }
   .report-btn.ghost:hover{ border-color:rgba(255,255,255,0.55); }
   .report-btn.ghost:disabled{ opacity:.5; cursor:default; }
@@ -663,11 +694,12 @@
     <div class="problem" id="problemDisplay">4,761</div>
     <div class="mem-progress" id="memProgress"><div class="mem-progress-fill" id="memProgressFill"></div></div>
     <div class="answer-row">
-      <input type="text" id="answerInput" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="decimal" placeholder="Answer">
+      <input type="text" id="answerInput" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="decimal" enterkeyhint="go" placeholder="Answer">
     </div>
+    <button type="button" id="actionBtn" class="action-btn" disabled>Submit</button>
     <div class="weekday-buttons" id="weekdayButtons" hidden></div>
     <div class="feedback" id="feedback"></div>
-    <div class="hint" id="hint">Press Enter to submit</div>
+    <div class="hint" id="hint">Press Enter or tap Submit</div>
   </main>
 
   <section class="stats" id="statsBar">
@@ -681,6 +713,7 @@
     <button id="toggleHistory" type="button">Show history</button>
     <button id="exportCsv" type="button">Export CSV</button>
     <button id="clearHistory" type="button">Clear history</button>
+    <button id="clearAllData" type="button">Clear all data</button>
   </section>
 
   <section class="history" id="historySection" hidden>
@@ -798,6 +831,7 @@
     memProgressFill: document.getElementById("memProgressFill"),
     problemDisplay: document.getElementById("problemDisplay"),
     answerInput: document.getElementById("answerInput"),
+    actionBtn: document.getElementById("actionBtn"),
     weekdayButtons: document.getElementById("weekdayButtons"),
     feedback: document.getElementById("feedback"),
     hint: document.getElementById("hint"),
@@ -808,6 +842,7 @@
     toggleHistory: document.getElementById("toggleHistory"),
     exportCsv: document.getElementById("exportCsv"),
     clearHistory: document.getElementById("clearHistory"),
+    clearAllData: document.getElementById("clearAllData"),
     historySection: document.getElementById("historySection"),
     historyModeLabel: document.getElementById("historyModeLabel"),
     timeChartHolder: document.getElementById("timeChartHolder"),
@@ -1070,13 +1105,13 @@
     els.feedback.innerHTML =
       '<div class="fb-status">' + escapeHtml(line1) + "</div>" +
       '<div class="fb-detail">' + line2 + "</div>";
-    els.hint.textContent = "Press Enter or Space for next problem";
+    els.hint.textContent = "Press Enter/Space or tap Next";
   }
 
   function clearFeedback(){
     els.feedback.classList.remove("correct", "incorrect", "margin");
     els.feedback.innerHTML = "";
-    els.hint.textContent = "Press Enter to submit";
+    els.hint.textContent = "Press Enter or tap Submit";
   }
 
   function escapeHtml(str){
@@ -1349,9 +1384,9 @@
   var lastReportEntries = null;
 
   function tierColors(acc){
-    if(acc >= 80) return { a: "#5cd98a", b: "#e6cf63", glow: "rgba(92,217,138,0.55)" };
-    if(acc >= 50) return { a: "#e6cf63", b: "#e0a955", glow: "rgba(230,207,99,0.5)" };
-    return { a: "#ff6b6b", b: "#e2665f", glow: "rgba(255,107,107,0.5)" };
+    if(acc >= 80) return { a: "#00e676", b: "#ffd60a", glow: "rgba(0,230,118,0.75)" };
+    if(acc >= 50) return { a: "#ffd60a", b: "#ff9100", glow: "rgba(255,214,10,0.7)" };
+    return { a: "#ff1744", b: "#ff3d00", glow: "rgba(255,23,68,0.7)" };
   }
 
   function renderReportCard(summary, prev, entries, justFinished){
@@ -1360,6 +1395,7 @@
 
     var theme = tierColors(summary.accuracy);
     els.reportCard.style.setProperty("--r-a", theme.a);
+    els.reportCard.style.setProperty("--r-b", theme.b);
     els.reportCard.style.setProperty("--r-glow", theme.glow);
 
     els.reportTitle.textContent = justFinished ? "Session complete" : "Session report";
@@ -1440,7 +1476,7 @@
     ctx.scale(scale, scale);
 
     // card background
-    roundRectPath(ctx, 0, 0, w, h, 30);
+    roundRectPath(ctx, 0, 0, w, h, 0);
     var bgGrad = ctx.createLinearGradient(0, 0, 0, h);
     bgGrad.addColorStop(0, "#141414");
     bgGrad.addColorStop(0.4, "#060606");
@@ -1453,14 +1489,14 @@
     glow.addColorStop(0, theme.glow);
     glow.addColorStop(1, "rgba(0,0,0,0)");
     ctx.save();
-    roundRectPath(ctx, 0, 0, w, h, 30);
+    roundRectPath(ctx, 0, 0, w, h, 0);
     ctx.clip();
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, w, h);
     ctx.restore();
 
     // border
-    roundRectPath(ctx, 1, 1, w - 2, h - 2, 29);
+    roundRectPath(ctx, 1, 1, w - 2, h - 2, 0);
     ctx.strokeStyle = "rgba(255,255,255,0.1)";
     ctx.lineWidth = 1;
     ctx.stroke();
@@ -1468,17 +1504,20 @@
     var cx = w / 2;
     ctx.textAlign = "center";
 
-    ctx.fillStyle = "#ffffff";
+    var titleGrad = ctx.createLinearGradient(cx - 90, 0, cx + 90, 0);
+    titleGrad.addColorStop(0, theme.a);
+    titleGrad.addColorStop(1, theme.b);
+    ctx.fillStyle = titleGrad;
     ctx.font = "800 22px " + FONT;
     ctx.fillText("Session Report", cx, 46);
 
-    ctx.fillStyle = "#a8a8a8";
+    ctx.fillStyle = "#e0e0e0";
     ctx.font = "500 13px " + FONT;
     ctx.fillText(formatSessionRange(summary, false), cx, 68);
 
     if(summary.modes && summary.modes.length){
-      ctx.fillStyle = "#dcdcdc";
-      ctx.font = "600 11.5px " + FONT;
+      ctx.fillStyle = theme.a;
+      ctx.font = "700 11.5px " + FONT;
       ctx.fillText(summary.modes.join("   \u00b7   "), cx, 89);
     }
 
@@ -1504,11 +1543,12 @@
     ctx.fillStyle = "#ffffff";
     ctx.font = "800 42px " + MONO;
     ctx.fillText(Math.round(summary.accuracy) + "%", cx, ringCy + 15);
-    ctx.fillStyle = "#8f8f8f";
+    ctx.fillStyle = theme.a;
     ctx.font = "700 11px " + FONT;
     ctx.fillText("ACCURACY", cx, ringCy + 36);
 
     // stat grid
+    var tileColors = ["#00d4ff", "#b026ff", "#ffd60a", "#00e676", "#ff2d78", "#ff6d00"];
     var stats = [
       { label: "ATTEMPTS", value: String(summary.total) },
       { label: "AVG TIME", value: summary.avgTime.toFixed(2) + "s" },
@@ -1522,25 +1562,28 @@
       var col = i % 3, row = Math.floor(i / 3);
       var x = 22 + col * (cellW + gridGap);
       var y = gridTop + row * (cellH + gridGap);
-      roundRectPath(ctx, x, y, cellW, cellH, 14);
+      var tileColor = tileColors[i];
+      roundRectPath(ctx, x, y, cellW, cellH, 0);
       ctx.fillStyle = "rgba(255,255,255,0.04)";
       ctx.fill();
       ctx.strokeStyle = "rgba(255,255,255,0.08)";
       ctx.lineWidth = 1;
       ctx.stroke();
-      ctx.fillStyle = "#ffffff";
+      ctx.fillStyle = tileColor;
+      ctx.fillRect(x, y, cellW, 3);
+      ctx.fillStyle = tileColor;
       ctx.font = "800 17px " + MONO;
-      ctx.fillText(s.value, x + cellW / 2, y + 28);
-      ctx.fillStyle = "#8f8f8f";
+      ctx.fillText(s.value, x + cellW / 2, y + 30);
+      ctx.fillStyle = "#c9c9c9";
       ctx.font = "700 9px " + FONT;
-      ctx.fillText(s.label, x + cellW / 2, y + 46);
+      ctx.fillText(s.label, x + cellW / 2, y + 47);
     });
 
     var afterGrid = gridTop + 2 * (cellH + gridGap) + 18;
 
     // response time mini chart
     ctx.textAlign = "left";
-    ctx.fillStyle = "#9a9a9a";
+    ctx.fillStyle = theme.a;
     ctx.font = "700 10.5px " + FONT;
     ctx.fillText("RESPONSE TIME", 22, afterGrid);
     var chartTop = afterGrid + 12, chartH = 60, chartX = 22, chartW = w - 44;
@@ -1564,7 +1607,7 @@
         var py = chartTop + chartH - ((e.timeTaken - minT) / range) * chartH;
         ctx.beginPath();
         ctx.arc(px, py, 2.6, 0, Math.PI * 2);
-        ctx.fillStyle = e.status === "Correct" ? "#5cd98a" : (e.status === "Margin Error" ? "#e6cf63" : "#ff6b6b");
+        ctx.fillStyle = e.status === "Correct" ? "#00e676" : (e.status === "Margin Error" ? "#ffd60a" : "#ff1744");
         ctx.fill();
       });
     } else {
@@ -1574,7 +1617,7 @@
     }
 
     var breakdownTop = chartTop + chartH + 30;
-    ctx.fillStyle = "#9a9a9a";
+    ctx.fillStyle = theme.a;
     ctx.font = "700 10.5px " + FONT;
     ctx.fillText("OUTCOME BREAKDOWN", 22, breakdownTop);
 
@@ -1583,12 +1626,12 @@
     var counts = { "Correct": 0, "Margin Error": 0, "Incorrect": 0 };
     entries.forEach(function(e){ counts[e.status] = (counts[e.status] || 0) + 1; });
     var segs = [
-      { key: "Correct", color: "#5cd98a" },
-      { key: "Margin Error", color: "#e6cf63" },
-      { key: "Incorrect", color: "#ff6b6b" }
+      { key: "Correct", color: "#00e676" },
+      { key: "Margin Error", color: "#ffd60a" },
+      { key: "Incorrect", color: "#ff1744" }
     ];
     var bx = chartX;
-    roundRectPath(ctx, chartX, barTop, chartW, barH, 5);
+    roundRectPath(ctx, chartX, barTop, chartW, barH, 0);
     ctx.fillStyle = "rgba(255,255,255,0.06)";
     ctx.fill();
     segs.forEach(function(s){
@@ -1609,14 +1652,14 @@
       ctx.arc(legendX + 4, legendY - 3, 4, 0, Math.PI * 2);
       ctx.fill();
       var label = s.key + " " + counts[s.key];
-      ctx.fillStyle = "#cfcfcf";
+      ctx.fillStyle = "#e0e0e0";
       ctx.fillText(label, legendX + 12, legendY);
       legendX += ctx.measureText(label).width + 34;
     });
 
     // footer
     ctx.textAlign = "center";
-    ctx.fillStyle = "#565656";
+    ctx.fillStyle = "#9a9a9a";
     ctx.font = "600 10px " + FONT;
     ctx.fillText("Mental Math Trainer \u00b7 generated " + new Date().toLocaleDateString(), cx, h - 20);
 
@@ -1674,6 +1717,19 @@
   }
 
   // ---------- idle / session state ----------
+  function updateActionButton(){
+    if(state.phase === "answering"){
+      els.actionBtn.textContent = "Submit";
+      els.actionBtn.disabled = false;
+    } else if(state.phase === "reviewing"){
+      els.actionBtn.textContent = "Next \u2192";
+      els.actionBtn.disabled = false;
+    } else {
+      els.actionBtn.textContent = "Submit";
+      els.actionBtn.disabled = true;
+    }
+  }
+
   function enterIdle(){
     state.phase = "idle";
     if(state.memoryTimeoutId){
@@ -1683,6 +1739,7 @@
     els.answerInput.disabled = true;
     setWeekdayButtonsDisabled(true);
     els.memProgress.classList.remove("active");
+    updateActionButton();
   }
 
   function resetStage(){
@@ -1718,6 +1775,7 @@
     els.answerInput.disabled = false;
     els.answerInput.value = "";
     setWeekdayButtonsDisabled(false);
+    updateActionButton();
     els.answerInput.focus();
   }
 
@@ -1727,6 +1785,7 @@
     els.answerInput.disabled = true;
     els.answerInput.value = "";
     els.hint.textContent = "Memorize…";
+    updateActionButton();
 
     els.memProgress.classList.add("active");
     els.memProgressFill.style.transition = "none";
@@ -1743,10 +1802,11 @@
       var dots = state.problem.target.split("").map(function(){ return "•"; }).join(" ");
       els.problemDisplay.textContent = dots;
       els.answerInput.placeholder = "Type what you saw";
-      els.hint.textContent = "Press Enter to submit";
+      els.hint.textContent = "Press Enter or tap Submit";
       state.phase = "answering";
       state.startTime = performance.now();
       els.answerInput.disabled = false;
+      updateActionButton();
       els.answerInput.focus();
     }, ms);
   }
@@ -1777,6 +1837,7 @@
     state.phase = "reviewing";
     els.answerInput.disabled = true;
     setWeekdayButtonsDisabled(true);
+    updateActionButton();
   }
 
   // ---------- events ----------
@@ -1819,6 +1880,14 @@
   els.reportDownloadBtn.addEventListener("click", downloadReportPNG);
   els.reportOverlay.addEventListener("click", function(e){
     if(e.target === els.reportOverlay) closeReport();
+  });
+
+  els.actionBtn.addEventListener("click", function(){
+    if(state.phase === "answering"){
+      submitAnswer(els.answerInput.value);
+    } else if(state.phase === "reviewing"){
+      nextProblem();
+    }
   });
 
   els.sqrtSigSlider.addEventListener("input", function(){
@@ -1939,6 +2008,19 @@
     saveLog();
     renderStats();
     renderHistory();
+  });
+
+  els.clearAllData.addEventListener("click", function(){
+    if(!log.length && !sessions.length){ return; }
+    var confirmed = window.confirm("Clear ALL saved data — every mode's history and every past session? This cannot be undone.");
+    if(!confirmed) return;
+    log = [];
+    sessions = [];
+    saveLog();
+    saveSessions();
+    renderStats();
+    renderHistory();
+    if(!els.historySection.hidden) renderSessionsTrend();
   });
 
   // ---------- init ----------
