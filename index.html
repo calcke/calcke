@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Mental Math Trainer</title>
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Math Trainer">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+
 <style>
   :root{
     --bg:#000000;
@@ -72,8 +81,13 @@
     gap:4px;
     border-bottom:1px solid var(--border);
     margin-bottom:20px;
+    overflow-x:auto;
+    scrollbar-width:none;
   }
+  .tabs::-webkit-scrollbar{ display:none; }
   .tab{
+    flex-shrink:0;
+    white-space:nowrap;
     appearance:none;
     background:none;
     border:none;
@@ -128,6 +142,28 @@
     background:var(--error-soft);
     color:var(--error);
   }
+  .fast-toggle{
+    appearance:none;
+    border:1px solid var(--border);
+    background:var(--surface-2);
+    color:var(--text-dim);
+    font-family:var(--sans);
+    font-size:13px;
+    font-weight:700;
+    padding:9px 14px;
+    border-radius:6px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .fast-toggle:hover{ border-color:var(--accent); }
+  .fast-toggle.on{
+    border-color:var(--success);
+    background:var(--success-soft);
+    color:var(--success);
+  }
+  .problem.flash-ok{ color:var(--success); }
+  .virtual-keyboard.fast #vkDelete{ opacity:.25; }
+  .virtual-keyboard.nodot .vk-key[data-key="."]{ opacity:.25; }
   .stopwatch{
     font-family:var(--mono);
     font-variant-numeric:tabular-nums;
@@ -480,6 +516,10 @@
     font-weight:700;
   }
 
+  .ws-row{ display:flex; justify-content:space-between; gap:8px; padding:7px 0; border-bottom:1px solid var(--border-soft); font-size:13px; }
+  .ws-row b{ font-family:var(--mono); font-weight:600; }
+  .ws-row small{ color:var(--text-dim); font-family:var(--mono); white-space:nowrap; }
+  .ws-empty{ color:var(--text-dim); font-size:12px; padding:6px 0; }
   .report-section-title{
     font-size:10.5px;
     font-weight:800;
@@ -648,6 +688,17 @@
     text-align:center;
     padding:16px;
   }
+
+  .virtual-keyboard{ display:none; grid-template-columns:repeat(3,1fr); gap:8px; padding:10px; width:100%; max-width:340px; box-sizing:border-box; background:var(--surface); border:1px solid var(--border-soft); border-radius:10px; margin-top:12px; }
+  .virtual-keyboard.active{ display:grid; }
+  .vk-key{ appearance:none; -webkit-tap-highlight-color:transparent; touch-action:manipulation; background:var(--surface-2); border:1px solid var(--border); color:var(--text); font-family:var(--mono); font-weight:600; font-size:24px; height:50px; border-radius:10px; cursor:pointer; user-select:none; }
+  .virtual-keyboard.active ~ .action-btn{ display:none; }
+  .vk-key:disabled{ opacity:.35; }
+  .vk-key:active{ transform:scale(0.95); background:var(--accent-soft); border-color:var(--accent); }
+  .vk-key.delete{ color:var(--error); border-color:var(--error); font-size:16px; }
+  .vk-key.submit{ color:var(--success); border-color:var(--success); grid-column:1 / -1; font-size:18px; height:46px; }
+  .card-btn{ appearance:none; background:var(--surface); border:1px solid var(--border); color:var(--accent); font-family:var(--sans); font-size:13px; font-weight:600; padding:10px 16px; border-radius:6px; cursor:pointer; margin:4px; }
+  .card-btn:hover{ border-color:var(--accent); background:var(--accent-soft); }
 </style>
 </head>
 <body>
@@ -662,10 +713,12 @@
     <button class="tab" data-mode="dayofweek" type="button">Day of week</button>
     <button class="tab" data-mode="cuberoot" type="button">Cube root</button>
     <button class="tab" data-mode="memory" type="button">Memory span</button>
+    <button class="tab" data-mode="multiply" type="button">Multiplication</button>
   </nav>
 
   <div class="session-bar">
     <button id="startStopBtn" class="start-btn" type="button">Start</button>
+    <button id="fastToggle" class="fast-toggle" type="button" aria-pressed="false">\u26a1 Fast: Off</button>
     <div class="stopwatch" id="stopwatch">00:00.0</div>
   </div>
 
@@ -679,6 +732,15 @@
     <label for="digitSlider">Root digits</label>
     <input type="range" id="digitSlider" min="1" max="10" value="5">
     <span id="digitValue">5</span>
+  </div>
+
+  <div class="params" id="paramsMul" hidden>
+    <label for="mulDigitsA">First number (m digits)</label>
+    <input type="range" id="mulDigitsA" min="1" max="9" value="3">
+    <span id="mulDigitsAValue">3</span>
+    <label for="mulDigitsB">Second number (n digits)</label>
+    <input type="range" id="mulDigitsB" min="1" max="9" value="2">
+    <span id="mulDigitsBValue">2</span>
   </div>
 
   <div class="params" id="paramsMemory" hidden>
@@ -696,6 +758,10 @@
     <div class="answer-row">
       <input type="text" id="answerInput" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="decimal" enterkeyhint="go" placeholder="Answer">
     </div>
+      <div class="virtual-keyboard" id="virtualKeyboard">
+        <button class="vk-key" data-key="1">1</button><button class="vk-key" data-key="2">2</button><button class="vk-key" data-key="3">3</button><button class="vk-key" data-key="4">4</button><button class="vk-key" data-key="5">5</button><button class="vk-key" data-key="6">6</button><button class="vk-key" data-key="7">7</button><button class="vk-key" data-key="8">8</button><button class="vk-key" data-key="9">9</button><button class="vk-key" data-key=".">.</button><button class="vk-key" data-key="0">0</button><button class="vk-key delete" id="vkDelete">DEL</button><button class="vk-key submit" id="vkSubmit">SUBMIT</button>
+      </div>
+
     <button type="button" id="actionBtn" class="action-btn" disabled>Submit</button>
     <div class="weekday-buttons" id="weekdayButtons" hidden></div>
     <div class="feedback" id="feedback"></div>
@@ -718,6 +784,11 @@
 
   <section class="history" id="historySection" hidden>
     <div class="history-head">History — <span id="historyModeLabel">Square root (4-digit)</span></div>
+  <div style="display:flex; gap:8px; justify-content:center; margin:16px 0;">
+    <button id="viewCardBtn" class="card-btn">📊 View Card</button>
+    <button id="viewWeeklyBtn" class="card-btn">📈 Weekly</button>
+  </div>
+
 
     <div class="chart-card">
       <h4>Accuracy by session · all modes</h4>
@@ -774,8 +845,10 @@
         </div>
       </div>
       <div class="report-grid" id="reportGrid"></div>
-      <div class="report-section-title">Response time this session</div>
+      <div class="report-section-title" id="reportStripTitle">Per question · dashed line = rolling median</div>
       <div id="reportTimeChart"></div>
+      <div class="report-section-title">Time spread (correct answers)</div>
+      <div id="reportHist"></div>
       <div class="report-section-title">Outcome breakdown</div>
       <div id="reportBreakdown"></div>
       <div class="report-compare" id="reportCompare"></div>
@@ -795,10 +868,12 @@
   var WEEKDAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
   var STORAGE_KEY = "mmt_log_v1";
   var SESSIONS_KEY = "mmt_sessions_v1";
+  var FAST_KEY = "mmt_fast_v1";
 
   var els = {
     tabs: Array.prototype.slice.call(document.querySelectorAll(".tab")),
     startStopBtn: document.getElementById("startStopBtn"),
+    fastToggle: document.getElementById("fastToggle"),
     stopwatch: document.getElementById("stopwatch"),
     reportOverlay: document.getElementById("reportOverlay"),
     reportCard: document.getElementById("reportCard"),
@@ -822,6 +897,11 @@
     paramsCube: document.getElementById("paramsCube"),
     digitSlider: document.getElementById("digitSlider"),
     digitValue: document.getElementById("digitValue"),
+    paramsMul: document.getElementById("paramsMul"),
+    mulDigitsASlider: document.getElementById("mulDigitsA"),
+    mulDigitsAValue: document.getElementById("mulDigitsAValue"),
+    mulDigitsBSlider: document.getElementById("mulDigitsB"),
+    mulDigitsBValue: document.getElementById("mulDigitsBValue"),
     paramsMemory: document.getElementById("paramsMemory"),
     memDigitsSlider: document.getElementById("memDigits"),
     memDigitsValue: document.getElementById("memDigitsValue"),
@@ -852,8 +932,11 @@
 
   var state = {
     mode: "sqrt",
+    fastMode: loadFast(),
     sqrtSigFigs: 10,
     cubeDigits: 5,
+    mulDigitsA: 3,
+    mulDigitsB: 2,
     memoryDigits: 6,
     memoryTimeSec: 3,
     memoryTimeoutId: null,
@@ -871,7 +954,140 @@
   var log = loadLog();
   var sessions = loadSessions();
 
+  // ===== VIRTUAL KEYBOARD & CARD UTILITIES =====
+  function isMobile(){
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  }
+
+  function focusAnswer(){
+    if(isMobile()){ els.answerInput.readOnly = true; els.answerInput.setAttribute("inputmode","none"); }
+    else { els.answerInput.readOnly = false; }
+    els.answerInput.focus();
+  }
+
+  function showVirtualKeyboard(){
+    var kbd = document.getElementById("virtualKeyboard");
+    if(!kbd) return;
+    kbd.classList.toggle("fast", state.fastMode);
+    kbd.classList.toggle("nodot", state.fastMode && state.mode !== "sqrt");
+    if(isMobile() && state.mode !== "dayofweek" && state.phase === "answering"){
+      kbd.classList.add("active");
+    } else {
+      kbd.classList.remove("active");
+    }
+  }
+
+  function hideVirtualKeyboard(){
+    var kbd = document.getElementById("virtualKeyboard");
+    if(kbd){ kbd.classList.remove("active"); }
+  }
+
+  function setupVirtualKeyboard(){
+    document.querySelectorAll(".vk-key[data-key]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var input = document.getElementById("answerInput");
+        var k = this.getAttribute("data-key");
+        if(state.fastMode && k === "." && state.mode !== "sqrt") return;
+        if(input && state.phase === "answering"){ input.value += k; input.dispatchEvent(new Event("input",{bubbles:true})); }
+      });
+    });
+    var delBtn = document.getElementById("vkDelete");
+    if(delBtn){
+      delBtn.addEventListener("click", function(){
+        var input = document.getElementById("answerInput");
+        if(state.fastMode) return;
+        if(input && state.phase === "answering"){ input.value = input.value.slice(0, -1); input.dispatchEvent(new Event("input",{bubbles:true})); }
+      });
+    }
+    var subBtn = document.getElementById("vkSubmit");
+    if(subBtn){
+      subBtn.addEventListener("click", function(){
+        if(state.phase === "answering"){
+          var input = document.getElementById("answerInput");
+          if(input){ submitAnswer(input.value); }
+        } else if(state.phase === "reviewing"){
+          nextProblem();
+        }
+      });
+    }
+  }
+
+  function summarizeEntries(entries, durationMs){
+    var total = entries.length;
+    var correct = entries.filter(function(e){ return e.status === "Correct"; });
+    var best = 0, cur = 0, modes = [];
+    entries.forEach(function(e){
+      if(e.status === "Correct"){ cur++; best = Math.max(best, cur); } else { cur = 0; }
+      if(modes.indexOf(e.modeLabel) === -1) modes.push(e.modeLabel);
+    });
+    return {
+      total: total,
+      accuracy: total ? correct.length / total * 100 : 0,
+      avgTime: total ? entries.reduce(function(a, e){ return a + e.timeTaken; }, 0) / total : 0,
+      bestTime: correct.length ? Math.min.apply(null, correct.map(function(e){ return e.timeTaken; })) : null,
+      bestStreak: best,
+      durationMs: durationMs || 0,
+      modes: modes,
+      endedAt: new Date().toISOString()
+    };
+  }
+
+  function openReport(){
+    var live = state.sessionId ? log.filter(function(e){ return e.sessionId === state.sessionId; }) : [];
+    if(live.length){
+      var sm = summarizeEntries(live, currentSessionElapsedMs());
+      sm.startedAt = state.sessionStartedAt;
+      var prev = sessions.length ? sessions[sessions.length - 1] : null;
+      renderReportCard(sm, prev, live, false);
+      els.reportTitle.textContent = "Current session";
+    } else if(sessions.length){
+      openSessionReport(sessions[sessions.length - 1].id);
+    } else {
+      alert("Answer a few questions first!");
+    }
+  }
+
+  function openWeeklyReport(){
+    var DAY = 24 * 3600 * 1000, now = Date.now();
+    function inRange(from, to){
+      return log.filter(function(e){ var t = new Date(e.timestamp).getTime(); return t >= from && t < to; });
+    }
+    function dur(from, to){
+      return sessions.filter(function(x){ var t = new Date(x.endedAt).getTime(); return t >= from && t < to; })
+        .reduce(function(a, x){ return a + (x.durationMs || 0); }, 0);
+    }
+    var entries = inRange(now - 7 * DAY, now + 1);
+    if(!entries.length){ alert("No attempts in the last 7 days yet."); return; }
+    var sm = summarizeEntries(entries, dur(now - 7 * DAY, now + 1));
+    sm.weekly = true;
+    var prevEntries = inRange(now - 14 * DAY, now - 7 * DAY);
+    var prev = prevEntries.length ? summarizeEntries(prevEntries, 0) : null;
+    renderReportCard(sm, prev, entries, false);
+    els.reportTitle.textContent = "Weekly report";
+    var f = new Date(now - 7 * DAY).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    var t = new Date(now).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    els.reportRange.textContent = f + " \u2013 " + t + " \u00b7 last 7 days";
+    if(prev){ els.reportCompare.innerHTML = els.reportCompare.innerHTML.replace("previous session", "previous week"); }
+    else { els.reportCompare.textContent = "No data from the previous week to compare."; }
+  }
+
+  function setupCardButtons(){
+    var cardBtn = document.getElementById("viewCardBtn");
+    if(cardBtn){ cardBtn.addEventListener("click", openReport); }
+    var weeklyBtn = document.getElementById("viewWeeklyBtn");
+    if(weeklyBtn){ weeklyBtn.addEventListener("click", openWeeklyReport); }
+  }
+
+
   // ---------- storage ----------
+  function loadFast(){
+    try{ return window.localStorage.getItem(FAST_KEY) === "1"; }catch(e){ return false; }
+  }
+
+  function saveFast(){
+    try{ window.localStorage.setItem(FAST_KEY, state.fastMode ? "1" : "0"); }catch(e){}
+  }
+
   function loadLog(){
     try{
       var raw = window.localStorage.getItem(STORAGE_KEY);
@@ -926,6 +1142,7 @@
     if(mode === "sqrt") return "Square root (4-digit, " + state.sqrtSigFigs + " s.f.)";
     if(mode === "dayofweek") return "Day of week";
     if(mode === "cuberoot") return "Cube root (" + state.cubeDigits + "-digit root)";
+    if(mode === "multiply") return "Multiplication (" + state.mulDigitsA + "\u00d7" + state.mulDigitsB + " digits)";
     if(mode === "memory") return "Memory span (" + state.memoryDigits + " digits, " + state.memoryTimeSec.toFixed(1) + "s)";
     return mode;
   }
@@ -933,6 +1150,7 @@
   function currentModeKey(){
     if(state.mode === "sqrt") return "sqrt-" + state.sqrtSigFigs;
     if(state.mode === "cuberoot") return "cuberoot-" + state.cubeDigits;
+    if(state.mode === "multiply") return "multiply-" + state.mulDigitsA + "x" + state.mulDigitsB;
     if(state.mode === "memory") return "memory-" + state.memoryDigits + "-" + state.memoryTimeSec;
     return state.mode;
   }
@@ -949,6 +1167,7 @@
         modeKey: "sqrt-" + sigFigs,
         sigFigs: sigFigs,
         displayText: n.toLocaleString("en-US"),
+        fastTarget: targetStr,
         target: targetStr,
         targetNum: parseFloat(targetStr)
       };
@@ -979,8 +1198,28 @@
         mode: "cuberoot",
         modeKey: "cuberoot-" + digits,
         displayText: commaFormat(cBig.toString()),
+        fastTarget: String(r),
         target: String(r),
         rootBig: rBig
+      };
+    }
+    if(state.mode === "multiply"){
+      var dA = state.mulDigitsA, dB = state.mulDigitsB;
+      function randBig(d){
+        var lo = d === 1 ? 2 : Math.pow(10, d - 1);
+        var hi = Math.pow(10, d) - 1;
+        return randInt(lo, hi);
+      }
+      var aBig = BigInt(randBig(dA));
+      var bBig = BigInt(randBig(dB));
+      var prod = aBig * bBig;
+      return {
+        mode: "multiply",
+        modeKey: "multiply-" + dA + "x" + dB,
+        displayText: commaFormat(aBig.toString()) + " \u00d7 " + commaFormat(bBig.toString()),
+        fastTarget: prod.toString(),
+        target: prod.toString(),
+        productBig: prod
       };
     }
     if(state.mode === "memory"){
@@ -993,6 +1232,7 @@
         mode: "memory",
         modeKey: "memory-" + len + "-" + state.memoryTimeSec,
         displayText: grouped,
+        fastTarget: seq,
         target: seq
       };
     }
@@ -1028,6 +1268,13 @@
         try{ ok = BigInt(cleaned) === problem.rootBig; }catch(e){ ok = false; }
       }
       status = ok ? "Correct" : "Incorrect";
+    } else if(problem.mode === "multiply"){
+      var cleanedMul = String(raw || "").replace(/[,\s]/g, "");
+      var okMul = false;
+      if(cleanedMul.length > 0 && /^-?\d+$/.test(cleanedMul)){
+        try{ okMul = BigInt(cleanedMul) === problem.productBig; }catch(e){ okMul = false; }
+      }
+      status = okMul ? "Correct" : "Incorrect";
     } else if(problem.mode === "memory"){
       var cleanedMem = String(raw || "").replace(/\s+/g, "");
       status = (cleanedMem === problem.target) ? "Correct" : "Incorrect";
@@ -1035,7 +1282,7 @@
 
     return {
       status: status,
-      correctDisplay: problem.mode === "memory" ? problem.displayText : problem.target,
+      correctDisplay: problem.mode === "memory" ? problem.displayText : (problem.mode === "multiply" ? commaFormat(problem.target) : problem.target),
       submittedDisplay: submittedDisplay
     };
   }
@@ -1051,21 +1298,25 @@
     });
     els.paramsSqrt.hidden = state.mode !== "sqrt";
     els.paramsCube.hidden = state.mode !== "cuberoot";
+    els.paramsMul.hidden = state.mode !== "multiply";
     els.paramsMemory.hidden = state.mode !== "memory";
     els.weekdayButtons.hidden = state.mode !== "dayofweek";
     els.memProgress.classList.remove("active");
 
     if(state.mode === "sqrt"){
-      els.answerInput.inputMode = "decimal";
+      els.answerInput.inputMode = isMobile() ? "none" : "decimal";
       els.answerInput.placeholder = "Answer to " + state.sqrtSigFigs + " s.f.";
     } else if(state.mode === "dayofweek"){
-      els.answerInput.inputMode = "text";
-      els.answerInput.placeholder = "Type weekday, or press 1–7";
+      els.answerInput.inputMode = isMobile() ? "none" : "text";
+      els.answerInput.placeholder = isMobile() ? "Tap a day below" : "Type weekday, or press 1–7";
     } else if(state.mode === "cuberoot"){
-      els.answerInput.inputMode = "numeric";
+      els.answerInput.inputMode = isMobile() ? "none" : "numeric";
       els.answerInput.placeholder = "Enter the root";
+    } else if(state.mode === "multiply"){
+      els.answerInput.inputMode = isMobile() ? "none" : "numeric";
+      els.answerInput.placeholder = "Enter the product";
     } else if(state.mode === "memory"){
-      els.answerInput.inputMode = "numeric";
+      els.answerInput.inputMode = isMobile() ? "none" : "numeric";
       els.answerInput.placeholder = "Digits will flash, then type them back";
     }
   }
@@ -1108,10 +1359,14 @@
     els.hint.textContent = "Press Enter/Space or tap Next";
   }
 
+  function answerHint(){
+    return state.fastMode ? "Fast mode: just type \u00b7 a wrong digit is final" : "Press Enter or tap Submit";
+  }
+
   function clearFeedback(){
     els.feedback.classList.remove("correct", "incorrect", "margin");
     els.feedback.innerHTML = "";
-    els.hint.textContent = "Press Enter or tap Submit";
+    els.hint.textContent = answerHint();
   }
 
   function escapeHtml(str){
@@ -1379,6 +1634,93 @@
     if(!els.historySection.hidden) renderSessionsTrend();
   }
 
+  // ---------- report data views ----------
+  function medianOf(a){
+    if(!a.length) return null;
+    var b = a.slice().sort(function(x, y){ return x - y; }), m = b.length >> 1;
+    return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2;
+  }
+
+  function renderStrip(holder, entries, weekly){
+    if(!entries.length){ holder.innerHTML = '<div class="chart-empty">No data yet</div>'; return; }
+    var bars = [], line = null;
+    if(weekly){
+      var days = {};
+      entries.forEach(function(e){ var k = new Date(e.timestamp).toDateString(); (days[k] = days[k] || []).push(e); });
+      Object.keys(days).forEach(function(k){
+        var g = days[k], ok = g.filter(function(e){ return e.status === "Correct"; });
+        var acc = ok.length / g.length * 100;
+        var v = medianOf(ok.map(function(e){ return e.timeTaken; }));
+        bars.push({ v: v === null ? 0 : v, c: acc >= 80 ? "var(--success)" : acc >= 50 ? "var(--margin)" : "var(--error)",
+          label: new Date(g[0].timestamp).toLocaleDateString(undefined, { weekday: "short" }), t: Math.round(acc) + "% \u00b7 " + g.length });
+      });
+    } else {
+      var win = [];
+      line = [];
+      entries.forEach(function(e, i){
+        bars.push({ v: e.timeTaken, c: statusColor(e.status), label: "", t: "#" + (i + 1) + " " + e.timeTaken.toFixed(2) + "s" });
+        win.push(e.timeTaken); if(win.length > 5) win.shift();
+        line.push(medianOf(win));
+      });
+    }
+    var w = 600, h = 130, padB = weekly ? 18 : 6, top = 14, ih = h - top - padB;
+    var maxV = Math.max.apply(null, bars.map(function(b){ return b.v; }).concat(line || [])) || 1;
+    var slot = w / bars.length, bw = Math.min(28, slot * 0.7);
+    var out = '<svg viewBox="0 0 ' + w + ' ' + h + '" width="100%" role="img">';
+    bars.forEach(function(b, i){
+      var bh = Math.max(2, b.v / maxV * ih), x = slot * i + (slot - bw) / 2;
+      out += '<rect x="' + x.toFixed(1) + '" y="' + (top + ih - bh).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="2" fill="' + b.c + '" opacity="0.85"><title>' + b.t + '</title></rect>';
+      if(weekly) out += '<text x="' + (slot * i + slot / 2).toFixed(1) + '" y="' + (h - 4) + '" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.6">' + b.label + '</text>';
+    });
+    if(line && line.length > 1){
+      out += '<polyline fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="4 3" opacity="0.8" points="' +
+        line.map(function(v, i){ return (slot * i + slot / 2).toFixed(1) + "," + (top + ih - v / maxV * ih).toFixed(1); }).join(" ") + '"/>';
+    }
+    out += '<text x="2" y="10" font-size="11" fill="currentColor" opacity="0.6">' + maxV.toFixed(1) + 's</text></svg>';
+    holder.innerHTML = out;
+  }
+
+  function renderHist(holder, times, med){
+    if(times.length < 3){ holder.innerHTML = '<div class="ws-empty">Needs at least 3 correct answers.</div>'; return; }
+    var lo = Math.min.apply(null, times), hi = Math.max.apply(null, times), n = 6, span = (hi - lo) || 1;
+    var bins = []; for(var i = 0; i < n; i++) bins.push(0);
+    times.forEach(function(t){ bins[Math.min(n - 1, Math.floor((t - lo) / span * n))]++; });
+    var mx = Math.max.apply(null, bins), w = 600, h = 90, bw = w / n;
+    var out = '<svg viewBox="0 0 ' + w + ' ' + (h + 16) + '" width="100%">';
+    bins.forEach(function(c, i){
+      var bh = c / mx * (h - 14);
+      out += '<rect x="' + (i * bw + 4).toFixed(1) + '" y="' + (h - bh).toFixed(1) + '" width="' + (bw - 8).toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="3" fill="var(--accent)" opacity="0.8"><title>' + c + ' answers</title></rect>';
+      out += '<text x="' + (i * bw + bw / 2).toFixed(1) + '" y="' + (h + 12) + '" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.6">' + (lo + span * i / n).toFixed(1) + '</text>';
+    });
+    var mxp = (med - lo) / span * w;
+    out += '<line x1="' + mxp.toFixed(1) + '" x2="' + mxp.toFixed(1) + '" y1="0" y2="' + h + '" stroke="currentColor" stroke-dasharray="4 3"/>';
+    holder.innerHTML = out + '</svg>';
+  }
+
+  function weakBucket(e){
+    var t = String(e.target || "").replace(/,/g, "");
+    if(e.modeKey.indexOf("sqrt") === 0){ var n = parseInt(t, 10); return isNaN(n) ? null : "Numbers " + (Math.floor(n / 1000) * 1000).toLocaleString("en-US") + "s"; }
+    if(e.modeKey.indexOf("cuberoot") === 0){ var c = Math.round(Math.cbrt(Number(t))); return isNaN(c) ? null : "Roots in the " + Math.floor(c / 10) * 10 + "s"; }
+    if(e.modeKey.indexOf("multiply") === 0){ var parts = String(e.target || "").split("\u00d7"); var second = (parts[1] || "").replace(/[,\s]/g, ""); return second ? "Multiplier starting with " + second.charAt(0) : null; }
+    if(e.modeKey === "dayofweek"){ var m = t.split(" ")[0]; return m ? "Month: " + m : null; }
+    return null;
+  }
+
+  function renderWeak(holder, entries){
+    var g = {};
+    entries.forEach(function(e){ var k = weakBucket(e); if(k) (g[k] = g[k] || []).push(e); });
+    var rows = Object.keys(g).map(function(k){
+      var a = g[k], wrong = a.filter(function(e){ return e.status !== "Correct"; }).length;
+      var m = medianOf(a.map(function(e){ return e.timeTaken; }));
+      return { k: k, n: a.length, wr: wrong / a.length * 100, m: m, score: wrong / a.length * 10 + m };
+    });
+    var solid = rows.filter(function(r){ return r.n >= 2; });
+    rows = (solid.length ? solid : rows).sort(function(a, b){ return b.score - a.score; }).slice(0, 3);
+    holder.innerHTML = rows.length ? rows.map(function(r){
+      return '<div class="ws-row"><b>' + escapeHtml(r.k) + '</b><small>' + r.m.toFixed(1) + 's \u00b7 ' + Math.round(r.wr) + '% wrong \u00b7 n=' + r.n + '</small></div>';
+    }).join("") : '<div class="ws-empty">Not available for this mode yet.</div>';
+  }
+
   var RING_C = 2 * Math.PI * 70;
   var lastReportSummary = null;
   var lastReportEntries = null;
@@ -1414,19 +1756,24 @@
       els.ringValue.textContent = Math.round(summary.accuracy) + "%";
     });
 
+    var okT = (entries || []).filter(function(e){ return e.status === "Correct"; }).map(function(e){ return e.timeTaken; });
+    var nOk = okT.length, mins = summary.durationMs / 60000;
+    var med = medianOf(okT);
     var items = [
-      { label: "Attempts", value: String(summary.total) },
-      { label: "Avg time", value: summary.avgTime.toFixed(2) + "s" },
-      { label: "Best time", value: summary.bestTime !== null ? summary.bestTime.toFixed(2) + "s" : "—" },
+      { label: "Correct / min", value: mins > 0 ? (nOk / mins).toFixed(1) : "\u2014" },
+      { label: "Median (correct)", value: med !== null ? med.toFixed(2) + "s" : "\u2014" },
+      { label: "Best time", value: summary.bestTime !== null ? summary.bestTime.toFixed(2) + "s" : "\u2014" },
       { label: "Best streak", value: String(summary.bestStreak) },
-      { label: "Duration", value: formatStopwatch(summary.durationMs) },
-      { label: "Correct", value: (entries || []).filter(function(e){ return e.status === "Correct"; }).length + "/" + summary.total }
+      { label: "Attempts", value: nOk + "/" + summary.total },
+      { label: "Duration", value: formatStopwatch(summary.durationMs) }
     ];
     els.reportGrid.innerHTML = items.map(function(it){
       return '<div class="report-stat"><div class="value">' + escapeHtml(it.value) + '</div><div class="label">' + it.label + '</div></div>';
     }).join("");
 
-    renderSessionTimeChart(els.reportTimeChart, entries || []);
+    document.getElementById("reportStripTitle").textContent = summary.weekly ? "Median time per day (correct answers)" : "Per question \u00b7 dashed line = rolling median";
+    renderStrip(els.reportTimeChart, entries || [], summary.weekly);
+    renderHist(document.getElementById("reportHist"), okT, med);
     renderBreakdown(els.reportBreakdown, entries || []);
 
     if(prev){
@@ -1461,218 +1808,188 @@
 
   function downloadReportPNG(){
     if(!lastReportSummary) return;
-    var summary = lastReportSummary;
-    var entries = lastReportEntries || [];
-    var theme = tierColors(summary.accuracy);
+    var sm = lastReportSummary, entries = lastReportEntries || [];
+    var theme = tierColors(sm.accuracy);
     var FONT = "-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
-    var MONO = "'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace";
-
-    var scale = 3;
-    var w = 480, h = 760;
+    var MONO = "ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace";
+    // 9:16 story (1080x1920), content inside IG/TikTok safe zone
+    var W = 360, H = 640, cx = W / 2, PX = 24, cw = W - PX * 2;
     var canvas = document.createElement("canvas");
-    canvas.width = w * scale;
-    canvas.height = h * scale;
+    canvas.width = 1080; canvas.height = 1920;
     var ctx = canvas.getContext("2d");
-    ctx.scale(scale, scale);
+    ctx.scale(3, 3);
 
-    // card background
-    roundRectPath(ctx, 0, 0, w, h, 0);
-    var bgGrad = ctx.createLinearGradient(0, 0, 0, h);
-    bgGrad.addColorStop(0, "#141414");
-    bgGrad.addColorStop(0.4, "#060606");
-    bgGrad.addColorStop(1, "#000000");
-    ctx.fillStyle = bgGrad;
-    ctx.fill();
+    function ls(v){ try{ ctx.letterSpacing = v; }catch(e){} }
+    function txt(t, x, y, font, color, align, spacing){
+      ctx.font = font; ctx.fillStyle = color; ctx.textAlign = align || "center";
+      ls((spacing || 0) + "px"); ctx.fillText(t, x, y); ls("0px");
+    }
+    function sect(t, y){ txt(t.toUpperCase(), PX, y, "800 9.5px " + FONT, theme.a, "left", 0.7); }
+    function fit(t, maxW, font){
+      ctx.font = font; ls("0px");
+      if(ctx.measureText(t).width <= maxW) return t;
+      while(t.length > 1 && ctx.measureText(t + "\u2026").width > maxW) t = t.slice(0, -1);
+      return t + "\u2026";
+    }
 
-    // glow behind ring
-    var glow = ctx.createRadialGradient(w / 2, 210, 10, w / 2, 210, 260);
-    glow.addColorStop(0, theme.glow);
-    glow.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.save();
-    roundRectPath(ctx, 0, 0, w, h, 0);
-    ctx.clip();
-    ctx.fillStyle = glow;
-    ctx.fillRect(0, 0, w, h);
-    ctx.restore();
+    // background (same look as on-screen card)
+    var bg = ctx.createRadialGradient(cx, -64, 0, cx, -64, 640);
+    bg.addColorStop(0, "#141414"); bg.addColorStop(0.55, "#050505"); bg.addColorStop(1, "#000");
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    var rcy = 213, rr = 44;
+    var glow = ctx.createRadialGradient(cx, rcy, 10, cx, rcy, 250);
+    glow.addColorStop(0, theme.glow); glow.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.globalAlpha = 0.28; ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
+    ctx.strokeStyle = "rgba(255,255,255,0.09)"; ctx.lineWidth = 1; ctx.strokeRect(8.5, 8.5, W - 17, H - 17);
 
-    // border
-    roundRectPath(ctx, 1, 1, w - 2, h - 2, 0);
-    ctx.strokeStyle = "rgba(255,255,255,0.1)";
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    // header
+    var tg = ctx.createLinearGradient(cx - 80, 0, cx + 80, 0);
+    tg.addColorStop(0, theme.a); tg.addColorStop(1, theme.b);
+    txt(els.reportTitle.textContent || "Session report", cx, 112, "800 22px " + FONT, tg);
+    txt(fit(els.reportRange.textContent, cw, "500 11px " + FONT), cx, 129, "500 11px " + FONT, "rgba(255,255,255,0.8)");
 
-    var cx = w / 2;
-    ctx.textAlign = "center";
-
-    var titleGrad = ctx.createLinearGradient(cx - 90, 0, cx + 90, 0);
-    titleGrad.addColorStop(0, theme.a);
-    titleGrad.addColorStop(1, theme.b);
-    ctx.fillStyle = titleGrad;
-    ctx.font = "800 22px " + FONT;
-    ctx.fillText("Session Report", cx, 46);
-
-    ctx.fillStyle = "#e0e0e0";
-    ctx.font = "500 13px " + FONT;
-    ctx.fillText(formatSessionRange(summary, false), cx, 68);
-
-    if(summary.modes && summary.modes.length){
-      ctx.fillStyle = theme.a;
-      ctx.font = "700 11.5px " + FONT;
-      ctx.fillText(summary.modes.join("   \u00b7   "), cx, 89);
+    // mode pills
+    var modes = sm.modes || [];
+    if(modes.length){
+      var pf = "700 8.5px " + FONT, pad = 9, gap = 5, pty = 138, ph = 16;
+      ctx.font = pf; ls("0px");
+      var items = modes.slice();
+      var iw = items.map(function(m){ return ctx.measureText(m).width + pad * 2; });
+      var total = iw.reduce(function(a, v){ return a + v; }, 0) + gap * (items.length - 1);
+      if(total > cw){
+        var joined = fit(modes.join("  \u00b7  "), cw - pad * 2, pf);
+        ctx.font = pf; items = [joined]; iw = [ctx.measureText(joined).width + pad * 2]; total = iw[0];
+      }
+      var pxl = cx - total / 2;
+      items.forEach(function(m, i){
+        ctx.fillStyle = theme.a; ctx.globalAlpha = 0.14; ctx.fillRect(pxl, pty, iw[i], ph);
+        ctx.globalAlpha = 0.45; ctx.strokeStyle = theme.a; ctx.lineWidth = 1; ctx.strokeRect(pxl + 0.5, pty + 0.5, iw[i] - 1, ph - 1);
+        ctx.globalAlpha = 1;
+        txt(m, pxl + iw[i] / 2, pty + 11, pf, theme.a);
+        pxl += iw[i] + gap;
+      });
     }
 
     // ring
-    var ringCy = 205, ringR = 74;
-    ctx.lineWidth = 13;
-    ctx.strokeStyle = "rgba(255,255,255,0.09)";
-    ctx.beginPath();
-    ctx.arc(cx, ringCy, ringR, 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.lineCap = "round"; ctx.lineWidth = 9;
+    ctx.strokeStyle = "rgba(255,255,255,0.08)";
+    ctx.beginPath(); ctx.arc(cx, rcy, rr, 0, Math.PI * 2); ctx.stroke();
+    ctx.save();
+    ctx.shadowColor = theme.glow; ctx.shadowBlur = 26;
+    ctx.strokeStyle = theme.a;
+    ctx.beginPath(); ctx.arc(cx, rcy, rr, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0.005, Math.min(1, sm.accuracy / 100))); ctx.stroke();
+    ctx.restore();
+    ctx.save();
+    ctx.shadowColor = theme.glow; ctx.shadowBlur = 18;
+    txt(Math.round(sm.accuracy) + "%", cx, rcy + 8, "800 26px " + MONO, "#fff");
+    ctx.restore();
+    txt("ACCURACY", cx, rcy + 22, "700 7.5px " + FONT, theme.a, "center", 1);
 
-    var pct = Math.max(0, Math.min(100, summary.accuracy)) / 100;
-    var ringGrad = ctx.createLinearGradient(cx - ringR, ringCy - ringR, cx + ringR, ringCy + ringR);
-    ringGrad.addColorStop(0, theme.a);
-    ringGrad.addColorStop(1, theme.b);
-    ctx.strokeStyle = ringGrad;
-    ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.arc(cx, ringCy, ringR, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct);
-    ctx.stroke();
-    ctx.lineCap = "butt";
-
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "800 42px " + MONO;
-    ctx.fillText(Math.round(summary.accuracy) + "%", cx, ringCy + 15);
-    ctx.fillStyle = theme.a;
-    ctx.font = "700 11px " + FONT;
-    ctx.fillText("ACCURACY", cx, ringCy + 36);
-
-    // stat grid
-    var tileColors = ["#00d4ff", "#b026ff", "#ffd60a", "#00e676", "#ff2d78", "#ff6d00"];
-    var stats = [
-      { label: "ATTEMPTS", value: String(summary.total) },
-      { label: "AVG TIME", value: summary.avgTime.toFixed(2) + "s" },
-      { label: "BEST TIME", value: summary.bestTime !== null ? summary.bestTime.toFixed(2) + "s" : "—" },
-      { label: "BEST STREAK", value: String(summary.bestStreak) },
-      { label: "DURATION", value: formatStopwatch(summary.durationMs) },
-      { label: "CORRECT", value: entries.filter(function(e){ return e.status === "Correct"; }).length + "/" + summary.total }
+    // tiles
+    var okT = entries.filter(function(e){ return e.status === "Correct"; }).map(function(e){ return e.timeTaken; });
+    var med = medianOf(okT), mins = sm.durationMs / 60000;
+    var tiles = [
+      [mins > 0 ? (okT.length / mins).toFixed(1) : "\u2014", "Correct / min", "#00d4ff"],
+      [med !== null ? med.toFixed(2) + "s" : "\u2014", "Median (correct)", "#b026ff"],
+      [sm.bestTime !== null ? sm.bestTime.toFixed(2) + "s" : "\u2014", "Best time", "#ffd60a"],
+      [String(sm.bestStreak), "Best streak", "#00e676"],
+      [okT.length + "/" + sm.total, "Attempts", "#ff2d78"],
+      [formatStopwatch(sm.durationMs), "Duration", "#ff6d00"]
     ];
-    var gridTop = 316, gridGap = 9, cellW = (w - 44 - gridGap * 2) / 3, cellH = 62;
-    stats.forEach(function(s, i){
-      var col = i % 3, row = Math.floor(i / 3);
-      var x = 22 + col * (cellW + gridGap);
-      var y = gridTop + row * (cellH + gridGap);
-      var tileColor = tileColors[i];
-      roundRectPath(ctx, x, y, cellW, cellH, 0);
-      ctx.fillStyle = "rgba(255,255,255,0.04)";
-      ctx.fill();
-      ctx.strokeStyle = "rgba(255,255,255,0.08)";
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.fillStyle = tileColor;
-      ctx.fillRect(x, y, cellW, 3);
-      ctx.fillStyle = tileColor;
-      ctx.font = "800 17px " + MONO;
-      ctx.fillText(s.value, x + cellW / 2, y + 30);
-      ctx.fillStyle = "#c9c9c9";
-      ctx.font = "700 9px " + FONT;
-      ctx.fillText(s.label, x + cellW / 2, y + 47);
+    var tw = (cw - 12) / 3, th = 36;
+    tiles.forEach(function(t, i){
+      var x = PX + (i % 3) * (tw + 6), y = 272 + Math.floor(i / 3) * (th + 6);
+      var tgr = ctx.createLinearGradient(0, y, 0, y + th);
+      tgr.addColorStop(0, "rgba(255,255,255,0.06)"); tgr.addColorStop(1, "rgba(255,255,255,0.015)");
+      ctx.fillStyle = tgr; ctx.fillRect(x, y, tw, th);
+      ctx.strokeStyle = "rgba(255,255,255,0.09)"; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, tw - 1, th - 1);
+      ctx.fillStyle = t[2]; ctx.fillRect(x, y, tw, 2);
+      txt(t[0], x + tw / 2, y + 19, "800 15px " + MONO, t[2]);
+      txt(t[1].toUpperCase(), x + tw / 2, y + 30, "500 6.8px " + FONT, "#c9c9c9", "center", 0.35);
     });
 
-    var afterGrid = gridTop + 2 * (cellH + gridGap) + 18;
-
-    // response time mini chart
-    ctx.textAlign = "left";
-    ctx.fillStyle = theme.a;
-    ctx.font = "700 10.5px " + FONT;
-    ctx.fillText("RESPONSE TIME", 22, afterGrid);
-    var chartTop = afterGrid + 12, chartH = 60, chartX = 22, chartW = w - 44;
-    var recentEntries = entries.slice(-20);
-    if(recentEntries.length){
-      var times = recentEntries.map(function(e){ return e.timeTaken; });
-      var maxT = Math.max.apply(null, times), minT = Math.min.apply(null, times);
-      var range = (maxT - minT) || 1;
-      var stepX = recentEntries.length > 1 ? chartW / (recentEntries.length - 1) : 0;
-      ctx.beginPath();
-      recentEntries.forEach(function(e, i){
-        var px = chartX + stepX * i;
-        var py = chartTop + chartH - ((e.timeTaken - minT) / range) * chartH;
-        if(i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-      });
-      ctx.strokeStyle = "rgba(255,255,255,0.35)";
-      ctx.lineWidth = 1.6;
-      ctx.stroke();
-      recentEntries.forEach(function(e, i){
-        var px = chartX + stepX * i;
-        var py = chartTop + chartH - ((e.timeTaken - minT) / range) * chartH;
-        ctx.beginPath();
-        ctx.arc(px, py, 2.6, 0, Math.PI * 2);
-        ctx.fillStyle = e.status === "Correct" ? "#00e676" : (e.status === "Margin Error" ? "#ffd60a" : "#ff1744");
-        ctx.fill();
+    // per-question strip
+    sect(sm.weekly ? "Median time per day (correct answers)" : "Per question \u00b7 dashed line = rolling median", 372);
+    var bars = [], line = [], win = [];
+    if(sm.weekly){
+      var days = {};
+      entries.forEach(function(e){ var k = new Date(e.timestamp).toDateString(); (days[k] = days[k] || []).push(e); });
+      Object.keys(days).forEach(function(k){
+        var g = days[k], ok = g.filter(function(e){ return e.status === "Correct"; });
+        var acc = ok.length / g.length * 100, v = medianOf(ok.map(function(e){ return e.timeTaken; }));
+        bars.push({ v: v || 0, c: acc >= 80 ? "#00e676" : acc >= 50 ? "#ffd60a" : "#ff2d55", l: new Date(g[0].timestamp).toLocaleDateString(undefined, { weekday: "short" }) });
       });
     } else {
-      ctx.fillStyle = "#666";
-      ctx.font = "500 12px " + FONT;
-      ctx.fillText("No data", chartX, chartTop + chartH / 2);
+      entries.forEach(function(e){
+        bars.push({ v: e.timeTaken, c: e.status === "Correct" ? "#00e676" : e.status === "Incorrect" ? "#ff2d55" : "#ffd60a", l: "" });
+        win.push(e.timeTaken); if(win.length > 5) win.shift(); line.push(medianOf(win));
+      });
+    }
+    var sy = 382, sh = 30, mx = Math.max.apply(null, bars.map(function(b){ return b.v; }).concat(line)) || 1;
+    var slot = cw / Math.max(1, bars.length), bw = Math.min(20, slot * 0.7);
+    bars.forEach(function(b, i){
+      var bh = Math.max(2, b.v / mx * sh);
+      ctx.fillStyle = b.c; ctx.globalAlpha = 0.88;
+      roundRectPath(ctx, PX + slot * i + (slot - bw) / 2, sy + sh - bh, bw, bh, 2); ctx.fill(); ctx.globalAlpha = 1;
+      if(b.l) txt(b.l, PX + slot * i + slot / 2, sy + sh + 10, "600 7.5px " + FONT, "rgba(255,255,255,0.6)");
+    });
+    if(line.length > 1){
+      ctx.strokeStyle = "rgba(255,255,255,0.85)"; ctx.lineWidth = 1.2; ctx.setLineDash([3, 2]); ctx.beginPath();
+      line.forEach(function(v, i){ var x = PX + slot * i + slot / 2, y = sy + sh - v / mx * sh; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    txt(mx.toFixed(1) + "s", W - PX, 372, "600 8px " + MONO, "rgba(255,255,255,0.5)", "right");
+
+    // histogram
+    sect("Time spread (correct answers)", 442);
+    var hy = 452, hh = 30;
+    if(okT.length >= 3){
+      var lo = Math.min.apply(null, okT), hi = Math.max.apply(null, okT), span = (hi - lo) || 1, n = 6, bins = [0,0,0,0,0,0];
+      okT.forEach(function(t){ bins[Math.min(n - 1, Math.floor((t - lo) / span * n))]++; });
+      var bmx = Math.max.apply(null, bins), bww = cw / n;
+      bins.forEach(function(c, i){
+        var bh = c / bmx * hh;
+        if(c > 0){
+          ctx.fillStyle = "#ffb800"; ctx.globalAlpha = 0.8;
+          roundRectPath(ctx, PX + i * bww + 4, hy + hh - bh, bww - 8, Math.max(1, bh), 3); ctx.fill(); ctx.globalAlpha = 1;
+        }
+        txt((lo + span * i / n).toFixed(1), PX + i * bww + bww / 2, hy + hh + 11, "600 8px " + MONO, "rgba(255,255,255,0.6)");
+      });
+      var mxp = PX + (med - lo) / span * cw;
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.setLineDash([3, 2]);
+      ctx.beginPath(); ctx.moveTo(mxp, hy - 4); ctx.lineTo(mxp, hy + hh); ctx.stroke(); ctx.setLineDash([]);
+      txt("median " + med.toFixed(2) + "s", W - PX, 442, "600 8px " + FONT, "rgba(255,255,255,0.75)", "right");
+    } else {
+      txt("Needs at least 3 correct answers", PX, hy + 18, "500 10px " + FONT, "rgba(255,255,255,0.45)", "left");
     }
 
-    var breakdownTop = chartTop + chartH + 30;
-    ctx.fillStyle = theme.a;
-    ctx.font = "700 10.5px " + FONT;
-    ctx.fillText("OUTCOME BREAKDOWN", 22, breakdownTop);
-
-    var barTop = breakdownTop + 12, barH = 10;
-    var total = entries.length || 1;
-    var counts = { "Correct": 0, "Margin Error": 0, "Incorrect": 0 };
-    entries.forEach(function(e){ counts[e.status] = (counts[e.status] || 0) + 1; });
-    var segs = [
-      { key: "Correct", color: "#00e676" },
-      { key: "Margin Error", color: "#ffd60a" },
-      { key: "Incorrect", color: "#ff1744" }
-    ];
-    var bx = chartX;
-    roundRectPath(ctx, chartX, barTop, chartW, barH, 0);
-    ctx.fillStyle = "rgba(255,255,255,0.06)";
-    ctx.fill();
-    segs.forEach(function(s){
-      var segW = (counts[s.key] / total) * chartW;
-      if(segW > 0){
-        ctx.fillStyle = s.color;
-        ctx.fillRect(bx, barTop, segW, barH);
-        bx += segW;
-      }
+    // outcome breakdown
+    var cnt = { Correct: 0, "Margin Error": 0, Incorrect: 0 };
+    entries.forEach(function(e){ if(cnt[e.status] !== undefined) cnt[e.status]++; });
+    var cols = { Correct: "#00e676", "Margin Error": "#ffd60a", Incorrect: "#ff1744" };
+    ctx.save();
+    roundRectPath(ctx, PX, 504, cw, 6, 3); ctx.clip();
+    ctx.fillStyle = "#121212"; ctx.fillRect(PX, 504, cw, 6);
+    var bx = PX;
+    Object.keys(cnt).forEach(function(k){
+      var wseg = cnt[k] / Math.max(1, sm.total) * cw;
+      if(wseg > 0){ ctx.fillStyle = cols[k]; ctx.fillRect(bx, 504, wseg, 6); bx += wseg; }
     });
-
-    var legendY = barTop + barH + 20;
-    var legendX = chartX;
-    ctx.font = "600 10.5px " + MONO;
-    segs.forEach(function(s){
-      ctx.fillStyle = s.color;
-      ctx.beginPath();
-      ctx.arc(legendX + 4, legendY - 3, 4, 0, Math.PI * 2);
-      ctx.fill();
-      var label = s.key + " " + counts[s.key];
-      ctx.fillStyle = "#e0e0e0";
-      ctx.fillText(label, legendX + 12, legendY);
-      legendX += ctx.measureText(label).width + 34;
+    ctx.restore();
+    var lx = PX, lf = "600 8.5px " + FONT;
+    Object.keys(cnt).forEach(function(k){
+      ctx.fillStyle = cols[k]; ctx.beginPath(); ctx.arc(lx + 3, 521, 3, 0, 7); ctx.fill();
+      var lbl = k + " " + cnt[k];
+      txt(lbl, lx + 10, 524, lf, "rgba(255,255,255,0.8)", "left");
+      ctx.font = lf; lx += 10 + ctx.measureText(lbl).width + 14;
     });
-
-    // footer
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#9a9a9a";
-    ctx.font = "600 10px " + FONT;
-    ctx.fillText("Mental Math Trainer \u00b7 generated " + new Date().toLocaleDateString(), cx, h - 20);
 
     canvas.toBlob(function(blob){
       if(!blob) return;
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement("a");
+      var url = URL.createObjectURL(blob), a = document.createElement("a");
       a.href = url;
-      a.download = "mental-math-session-" + new Date(summary.endedAt).toISOString().slice(0, 10) + ".png";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      a.download = "mental-math-" + (sm.weekly ? "weekly-" : "session-") + new Date(sm.endedAt).toISOString().slice(0, 10) + ".png";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
     }, "image/png");
   }
 
@@ -1704,6 +2021,20 @@
     tickStopwatch();
   }
 
+  function pauseStopwatch(){
+    if(state.sessionRunStart !== null){
+      state.sessionElapsedMs += performance.now() - state.sessionRunStart;
+      state.sessionRunStart = null;
+    }
+    tickStopwatch();
+  }
+
+  function resumeStopwatch(){
+    if(state.sessionRunStart === null && state.stopwatchIntervalId){
+      state.sessionRunStart = performance.now();
+    }
+  }
+
   function stopStopwatch(){
     if(state.sessionRunStart !== null){
       state.sessionElapsedMs += performance.now() - state.sessionRunStart;
@@ -1717,7 +2048,14 @@
   }
 
   // ---------- idle / session state ----------
+  function syncVk(){
+    var sb = document.getElementById("vkSubmit");
+    if(sb){ sb.textContent = state.phase === "reviewing" ? "NEXT \u2192" : "SUBMIT"; }
+    document.querySelectorAll(".vk-key[data-key], #vkDelete").forEach(function(b){ b.disabled = state.phase !== "answering"; });
+  }
+
   function updateActionButton(){
+    syncVk();
     if(state.phase === "answering"){
       els.actionBtn.textContent = "Submit";
       els.actionBtn.disabled = false;
@@ -1743,6 +2081,7 @@
   }
 
   function resetStage(){
+    hideVirtualKeyboard();
     enterIdle();
     els.problemDisplay.textContent = "Press Start";
     clearFeedback();
@@ -1752,6 +2091,7 @@
 
   // ---------- flow ----------
   function nextProblem(){
+    resumeStopwatch();
     if(!state.started) return;
     if(state.memoryTimeoutId){
       clearTimeout(state.memoryTimeoutId);
@@ -1776,7 +2116,8 @@
     els.answerInput.value = "";
     setWeekdayButtonsDisabled(false);
     updateActionButton();
-    els.answerInput.focus();
+    showVirtualKeyboard();
+    focusAnswer();
   }
 
   function startMemoryShowing(){
@@ -1802,12 +2143,13 @@
       var dots = state.problem.target.split("").map(function(){ return "•"; }).join(" ");
       els.problemDisplay.textContent = dots;
       els.answerInput.placeholder = "Type what you saw";
-      els.hint.textContent = "Press Enter or tap Submit";
+      els.hint.textContent = answerHint();
       state.phase = "answering";
       state.startTime = performance.now();
       els.answerInput.disabled = false;
       updateActionButton();
-      els.answerInput.focus();
+      showVirtualKeyboard();
+      focusAnswer();
     }, ms);
   }
 
@@ -1826,15 +2168,29 @@
       correctAnswer: result.correctDisplay,
       submitted: result.submittedDisplay,
       timeTaken: elapsed,
-      status: result.status
+      status: result.status,
+      fast: state.fastMode
     });
     saveLog();
+
+    if(state.fastMode && result.status === "Correct"){
+      // fast mode: no review screen, the clock keeps running, next problem appears at once
+      renderStats();
+      renderHistory();
+      clearFeedback();
+      state.phase = "advancing";
+      nextProblem();
+      els.problemDisplay.classList.add("flash-ok");
+      setTimeout(function(){ els.problemDisplay.classList.remove("flash-ok"); }, 220);
+      return;
+    }
 
     renderFeedback(result, elapsed);
     renderStats();
     renderHistory();
 
     state.phase = "reviewing";
+    pauseStopwatch();
     els.answerInput.disabled = true;
     setWeekdayButtonsDisabled(true);
     updateActionButton();
@@ -1846,6 +2202,7 @@
       var mode = tab.getAttribute("data-mode");
       if(mode === state.mode) return;
       state.mode = mode;
+      hideVirtualKeyboard();
       renderModeUI();
       renderStats();
       if(state.started){
@@ -1909,6 +2266,24 @@
     }
   });
 
+  els.mulDigitsASlider.addEventListener("input", function(){
+    state.mulDigitsA = parseInt(els.mulDigitsASlider.value, 10);
+    els.mulDigitsAValue.textContent = String(state.mulDigitsA);
+    if(state.mode === "multiply"){
+      renderStats();
+      nextProblem();
+    }
+  });
+
+  els.mulDigitsBSlider.addEventListener("input", function(){
+    state.mulDigitsB = parseInt(els.mulDigitsBSlider.value, 10);
+    els.mulDigitsBValue.textContent = String(state.mulDigitsB);
+    if(state.mode === "multiply"){
+      renderStats();
+      nextProblem();
+    }
+  });
+
   els.memDigitsSlider.addEventListener("input", function(){
     state.memoryDigits = parseInt(els.memDigitsSlider.value, 10);
     els.memDigitsValue.textContent = String(state.memoryDigits);
@@ -1926,6 +2301,68 @@
       nextProblem();
     }
   });
+
+  // ---------- fast mode ----------
+  function fastEval(problem, typed){
+    var t = problem.fastTarget;
+    if(typeof t !== "string" || !typed.length) return "prefix";
+    if(t.indexOf(typed) !== 0) return "mismatch";
+    if(typed.length === t.length) return "complete";
+    if(problem.mode === "sqrt"){
+      var dot = t.indexOf(".");
+      if(dot > -1 && typed.length >= dot && /^[0.]*$/.test(t.slice(typed.length))) return "complete";
+    }
+    return "prefix";
+  }
+
+  function fastActive(){
+    return state.fastMode && state.phase === "answering" && state.problem && state.mode !== "dayofweek";
+  }
+
+  els.answerInput.addEventListener("beforeinput", function(e){
+    if(!fastActive()) return;
+    var t = e.inputType || "";
+    if(t.indexOf("delete") === 0 || t === "insertFromPaste" || t === "insertFromDrop" || t === "insertFromYank" || t === "historyUndo" || t === "historyRedo"){
+      e.preventDefault();
+      return;
+    }
+    if(e.data){
+      var allowed = state.mode === "sqrt" ? /^[0-9.]+$/ : /^[0-9]+$/;
+      if(!allowed.test(e.data)) e.preventDefault();
+    }
+  });
+
+  els.answerInput.addEventListener("input", function(){
+    if(!fastActive()) return;
+    var typed = els.answerInput.value;
+    var allowed = state.mode === "sqrt" ? /[^0-9.]/g : /[^0-9]/g;
+    var clean = typed.replace(allowed, "");
+    if(clean !== typed){ els.answerInput.value = clean; typed = clean; }
+    var r = fastEval(state.problem, typed);
+    if(r === "complete" || r === "mismatch"){
+      submitAnswer(typed);
+    }
+  });
+
+  els.fastToggle.addEventListener("click", function(){
+    state.fastMode = !state.fastMode;
+    saveFast();
+    renderFastToggle();
+    showVirtualKeyboard();
+    if(state.phase === "answering"){
+      els.hint.textContent = answerHint();
+      focusAnswer();
+    } else {
+      els.fastToggle.blur();
+      if(state.phase === "idle") els.hint.textContent = "Press Start to begin";
+    }
+  });
+
+  function renderFastToggle(){
+    els.fastToggle.classList.toggle("on", state.fastMode);
+    els.fastToggle.setAttribute("aria-pressed", state.fastMode ? "true" : "false");
+    els.fastToggle.textContent = "\u26a1 Fast: " + (state.fastMode ? "On" : "Off");
+  }
 
   document.addEventListener("keydown", function(e){
     if(!els.reportOverlay.hidden){
@@ -1945,6 +2382,7 @@
       return;
     }
     // answering phase
+    if(fastActive() && (e.key === "Backspace" || e.key === "Delete")){ e.preventDefault(); return; }
     if(state.mode === "dayofweek" && /^[1-7]$/.test(e.key)){
       e.preventDefault();
       var chosenDay = WEEKDAYS[parseInt(e.key, 10) - 1];
@@ -2024,12 +2462,23 @@
   });
 
   // ---------- init ----------
+  setupVirtualKeyboard();
+  setupCardButtons();
   buildWeekdayButtons();
   renderModeUI();
+  renderFastToggle();
   renderStats();
   resetStage();
   tickStopwatch();
 })();
+</script>
+<script>
+  // Offline support for the web/phone version only (skipped inside the Tauri desktop app)
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js').catch(function(){});
+    });
+  }
 </script>
 </body>
 </html>
