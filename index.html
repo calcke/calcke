@@ -58,6 +58,7 @@
     flex-direction:column;
     gap:0;
   }
+  html.desktop .app{ max-width:none; width:100%; padding-left:32px; padding-right:32px; }
   .topbar{
     display:flex;
     align-items:baseline;
@@ -727,7 +728,7 @@
 
   <div class="session-bar">
     <button id="startStopBtn" class="start-btn" type="button">Start</button>
-    <button id="fastToggle" class="fast-toggle" type="button" aria-pressed="false">\u26a1 Fast: Off</button>
+    <button id="fastToggle" class="fast-toggle" type="button" aria-pressed="false">Fast: Off</button>
     <div class="stopwatch" id="stopwatch">00:00.0</div>
   </div>
 
@@ -2370,7 +2371,7 @@
   function renderFastToggle(){
     els.fastToggle.classList.toggle("on", state.fastMode);
     els.fastToggle.setAttribute("aria-pressed", state.fastMode ? "true" : "false");
-    els.fastToggle.textContent = "\u26a1 Fast: " + (state.fastMode ? "On" : "Off");
+    els.fastToggle.textContent = "Fast: " + (state.fastMode ? "On" : "Off");
   }
 
   document.addEventListener("keydown", function(e){
@@ -2480,6 +2481,9 @@
   resetStage();
   tickStopwatch();
 })();
+</script>
+<script>
+  if(/Electron/i.test(navigator.userAgent)) document.documentElement.classList.add('desktop');
 </script>
 <script>
   // Download buttons (shown only on the hosted website, not inside the APK / EXE)

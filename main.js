@@ -3,8 +3,8 @@ const path = require('path');
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 480,
-    height: 860,
+    width: 1280,
+    height: 800,
     minWidth: 360,
     minHeight: 560,
     backgroundColor: '#000000',
@@ -14,6 +14,7 @@ function createWindow() {
     webPreferences: { contextIsolation: true }
   });
   Menu.setApplicationMenu(null);
+  win.maximize();
   win.loadFile(path.join(__dirname, 'index.html'));
 }
 
