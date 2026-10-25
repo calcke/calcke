@@ -699,6 +699,9 @@
   .vk-key.submit{ color:var(--success); border-color:var(--success); grid-column:1 / -1; font-size:18px; height:46px; }
   .card-btn{ appearance:none; background:var(--surface); border:1px solid var(--border); color:var(--accent); font-family:var(--sans); font-size:13px; font-weight:600; padding:10px 16px; border-radius:6px; cursor:pointer; margin:4px; }
   .card-btn:hover{ border-color:var(--accent); background:var(--accent-soft); }
+  .get-app{ display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap; padding:8px 12px; border-bottom:1px solid var(--border-soft); background:var(--surface); font-family:var(--sans); font-size:12px; color:var(--text-faint); }
+  .get-app a{ color:var(--accent); border:1px solid var(--border); border-radius:6px; padding:6px 12px; font-weight:600; text-decoration:none; }
+  .get-app a:hover{ border-color:var(--accent); background:var(--accent-soft); }
 </style>
 </head>
 <body>
@@ -706,6 +709,12 @@
 
   <div class="topbar">
     <div class="brand"><b>Mental Math</b> <span class="dot">·</span> Trainer</div>
+  </div>
+
+  <div class="get-app" id="getApp" hidden>
+    <span>Get calcke:</span>
+    <a id="dlApk" href="#" download>&#11015; Android APK</a>
+    <a id="dlExe" href="#" download>&#11015; Windows EXE</a>
   </div>
 
   <nav class="tabs">
@@ -2471,6 +2480,20 @@
   resetStage();
   tickStopwatch();
 })();
+</script>
+<script>
+  // Download buttons (shown only on the hosted website, not inside the APK / EXE)
+  (function(){
+    try{
+      var h = location.hostname, m = h.match(/^([^.]+)\.github\.io$/);
+      var repo = location.pathname.split('/')[1];
+      if(!m || !repo || window.Capacitor || /^https?:$/.test(location.protocol) === false) return;
+      var base = 'https://github.com/' + m[1] + '/' + repo + '/releases/latest/download/';
+      document.getElementById('dlApk').href = base + 'calcke.apk';
+      document.getElementById('dlExe').href = base + 'calcke-setup.exe';
+      document.getElementById('getApp').hidden = false;
+    }catch(e){}
+  })();
 </script>
 <script>
   // Offline support for the web/phone version only (skipped inside the Tauri desktop app)

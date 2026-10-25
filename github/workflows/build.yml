@@ -1,0 +1,128 @@
+name: calcke - deploy site, build APK and Windows EXE
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write     # create the "latest" release with the APK / EXE
+  pages: write        # deploy the website
+  id-token: write
+
+concurrency:
+  group: calcke-build
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------- WEBSITE
+  site:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Collect site files
+        run: |
+          mkdir _site
+          cp index.html sw.js manifest.webmanifest icon-*.png _site/
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+        continue-on-error: true
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+  # ---------------------------------------------------------------- ANDROID APK
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Create Android project
+        run: |
+          npm run prepare:web
+          npx cap add android
+          npx cap sync android
+
+      - name: Set launcher icon
+        run: |
+          cd android/app/src/main/res
+          rm -rf mipmap-anydpi-v26
+          for d in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
+            name="${d%%:*}"; size="${d##*:}"
+            mkdir -p "mipmap-$name"
+            convert "$GITHUB_WORKSPACE/icon-512.png" -resize "${size}x${size}" "mipmap-$name/ic_launcher.png"
+            cp "mipmap-$name/ic_launcher.png" "mipmap-$name/ic_launcher_round.png"
+            rm -f "mipmap-$name/ic_launcher_foreground.png"
+          done
+
+      - name: Build APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Rename APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk calcke.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: calcke-apk
+          path: calcke.apk
+
+  # ---------------------------------------------------------------- WINDOWS EXE
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build Windows app
+        run: npm run dist:win
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: calcke-windows
+          path: |
+            dist/calcke-setup.exe
+            dist/calcke-portable.exe
+
+  # ---------------------------------------------------------------- RELEASE
+  release:
+    needs: [android, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - name: Publish "latest" release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          ls -la out
+          gh release delete latest --cleanup-tag --yes || true
+          gh release create latest out/calcke.apk out/calcke-setup.exe out/calcke-portable.exe \
+            --title "calcke (latest build)" \
+            --notes "Android APK: calcke.apk | Windows installer: calcke-setup.exe | Windows portable: calcke-portable.exe (built from commit ${GITHUB_SHA::7})" \
+            --latest

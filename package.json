@@ -1,0 +1,43 @@
+{
+  "name": "calcke",
+  "productName": "calcke",
+  "version": "1.0.0",
+  "description": "calcke - Mental Math Trainer",
+  "author": "calcke",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "prepare:web": "node scripts/copy-web.js",
+    "start": "electron .",
+    "dist:win": "electron-builder --win --publish never",
+    "android:sync": "npm run prepare:web && cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.calcke.app",
+    "productName": "calcke",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "index.html", "sw.js", "manifest.webmanifest", "icon-*.png"],
+    "win": {
+      "icon": "icon-512.png",
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "calcke-setup.exe"
+    },
+    "portable": { "artifactName": "calcke-portable.exe" }
+  }
+}

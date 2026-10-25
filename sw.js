@@ -1,6 +1,6 @@
 // Bump this version string whenever you upload a new index.html,
 // so phones drop the old cached copy and load the new one.
-const CACHE = 'mmt-v1';
+const CACHE = 'mmt-v2';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 
 self.addEventListener('install', e => {
