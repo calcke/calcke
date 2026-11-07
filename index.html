@@ -703,6 +703,116 @@
   .get-app{ display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap; padding:8px 12px; border-bottom:1px solid var(--border-soft); background:var(--surface); font-family:var(--sans); font-size:12px; color:var(--text-faint); }
   .get-app a{ color:var(--accent); border:1px solid var(--border); border-radius:6px; padding:6px 12px; font-weight:600; text-decoration:none; }
   .get-app a:hover{ border-color:var(--accent); background:var(--accent-soft); }
+
+  /* ================= CALCULATOR VIEW (device simulator) ================= */
+  body.calc-on{ overflow:hidden; }
+  body.calc-on .app{ display:none; }
+  .topbar .view-switch{ appearance:none; background:var(--surface); border:1px solid var(--border); color:var(--accent); font-family:var(--sans); font-size:12px; font-weight:700; padding:7px 14px; border-radius:999px; cursor:pointer; }
+  .topbar .view-switch:hover{ border-color:var(--accent); background:var(--accent-soft); }
+
+  #calcView{ position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center; padding:2vh 2vw; overflow:auto;
+    -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent; color:#c8d0d6;
+    background:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+      radial-gradient(ellipse at 50% 25%,#3b4046 0%,#171a1d 70%,#0e1012 100%); }
+  #calcView *{ box-sizing:border-box; }
+  #cxStage{ width:min(94vw,calc(94vh*.412)); aspect-ratio:666/1616; container-type:inline-size; position:relative; flex-shrink:0; }
+  @supports (height:1dvh){ #cxStage{ width:min(94vw,calc(94dvh*.412)); } }
+  #cxDev{ width:100%; height:100%; perspective:220cqw; }
+  #cxFlip{ position:relative; width:100%; height:100%; transform-style:preserve-3d; transition:transform .75s cubic-bezier(.3,.1,.2,1); }
+  #cxFlip.flipped{ transform:rotateY(180deg); }
+  .cxFace{ position:absolute; inset:0; border-radius:8cqw; -webkit-backface-visibility:hidden; backface-visibility:hidden;
+    background:
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+      linear-gradient(155deg,#363a41 0%,#212428 45%,#17191c 100%);
+    box-shadow:0 0 0 .35cqw #090a0c,0 0 0 .7cqw #ffffff0c,0 5cqw 9cqw #000d,0 1cqw 2.5cqw #000a,
+      inset 0 .5cqw .7cqw #ffffff22,inset 0 -.9cqw 1.4cqw #0009; }
+  .cxFront{ display:flex; flex-direction:column; padding:9.5cqw 6cqw 7cqw; }
+  .cxBack{ transform:rotateY(180deg); background-position:0 0,0 0; padding:9.5cqw 6cqw 7cqw; display:flex; flex-direction:column; align-items:center; cursor:pointer; }
+  #cxFlip.flipped .cxFront{ pointer-events:none; }
+  #cxFlip:not(.flipped) .cxBack{ pointer-events:none; }
+
+  .cxBrand{ display:flex; justify-content:center; align-items:baseline; gap:2cqw; margin-bottom:3.4cqw; }
+  .cxBrand b{ font-size:5.4cqw; font-weight:600; letter-spacing:.35cqw; color:#dde3e7; text-shadow:0 -.12cqw 0 #000b,0 .15cqw 0 #ffffff18; }
+  .cxBrand i{ font-style:normal; font-size:2.1cqw; color:#7d8892; letter-spacing:.3cqw; }
+  .cxScrew{ position:absolute; width:3.6cqw; height:3.6cqw; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#9aa0a6,#40454a 70%); box-shadow:inset 0 0 .3cqw #000,0 .2cqw .3cqw #ffffff1c,0 0 0 .3cqw #0a0b0c; }
+  .cxScrew::after{ content:""; position:absolute; inset:0; transform:rotate(28deg);
+    background:linear-gradient(#000a,#000a) center/72% 13% no-repeat,linear-gradient(#000a,#000a) center/13% 72% no-repeat; }
+  .cxS1{ left:3.9cqw; top:3.9cqw; } .cxS2{ right:3.9cqw; top:3.9cqw; } .cxS3{ left:3.9cqw; bottom:3.9cqw; } .cxS4{ right:3.9cqw; bottom:3.9cqw; }
+
+  /* the hidden dot */
+  .cxDot{ position:absolute; top:9.4cqw; right:21cqw; width:7cqw; height:7cqw; padding:0; border:0; background:none; cursor:pointer; z-index:3; }
+  .cxDot::before{ content:""; position:absolute; left:50%; top:50%; width:1.3cqw; height:1.3cqw; margin:-.65cqw 0 0 -.65cqw; border-radius:50%;
+    background:#16181b; box-shadow:inset 0 .15cqw .2cqw #000,0 .12cqw 0 #ffffff14; }
+
+  .cxBezel{ background:linear-gradient(#040505,#0d0f10); border-radius:2.4cqw; padding:3cqw 3cqw 1.6cqw;
+    box-shadow:inset 0 0 0 .25cqw #ffffff12,inset 0 .5cqw 1cqw #000,0 .3cqw 0 #ffffff12,0 -.2cqw 0 #0008; }
+  .cxWin{ position:relative; aspect-ratio:400/240; border-radius:.6cqw; overflow:hidden; background:#d5d9cc; box-shadow:0 0 0 .3cqw #000,inset 0 0 1.4cqw #000a; }
+  .cxWin canvas{ width:100%; height:100%; display:block; }
+  .cxWin::after{ content:""; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(112deg,#ffffff38 0%,#ffffff00 36%,#ffffff00 62%,#ffffff12 100%),radial-gradient(ellipse at 50% 50%,#0000 65%,#0002 100%); }
+  .cxBzCap{ text-align:center; font-size:1.7cqw; letter-spacing:.35cqw; color:#3b4349; padding-top:1.2cqw; }
+
+  .cxTag{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.4cqw;
+    font-size:2.3cqw; letter-spacing:.25cqw; color:#76808a; text-shadow:0 .12cqw 0 #000a; min-height:6cqw; }
+  .cxTag hr{ width:30cqw; border:0; height:.3cqw; background:linear-gradient(90deg,#0000,#00000099,#0000); margin:0; }
+
+  .cxPad{ display:grid; grid-template-columns:repeat(4,1fr); grid-auto-rows:23.2cqw; }
+  .cxKc{ position:relative; display:flex; flex-direction:column; align-items:center; touch-action:none; cursor:pointer; }
+  .cxSh{ height:4.4cqw; line-height:4.4cqw; font-size:2cqw; font-weight:700; letter-spacing:.08cqw; white-space:nowrap; color:#efc04a; text-shadow:0 .1cqw 0 #000a; }
+  .cxWell{ width:17.8cqw; height:15.2cqw; margin-top:.2cqw; border-radius:2.1cqw; background:#08090a; padding-top:.5cqw;
+    display:flex; justify-content:center; align-items:flex-start; box-shadow:inset 0 .5cqw .9cqw #000,0 .2cqw 0 #ffffff16,0 -.15cqw 0 #0009; }
+  .cxKey{ width:16.2cqw; height:13.4cqw; border-radius:1.9cqw; display:flex; align-items:center; justify-content:center;
+    font:700 3.3cqw Arial,Helvetica,sans-serif; letter-spacing:.1cqw; color:#eef1f3; text-shadow:0 -.1cqw 0 #0008;
+    background:radial-gradient(ellipse at 50% 22%,#ffffff22,#ffffff00 62%),linear-gradient(#5a6068,#3d4247);
+    box-shadow:0 1.1cqw 0 #040506,0 1.7cqw 1.7cqw #000b,inset 0 .25cqw .3cqw #ffffff33,inset 0 -.45cqw .6cqw #0007;
+    transition:transform .045s,box-shadow .045s; }
+  .cxKey.fn{ background:radial-gradient(ellipse at 50% 22%,#ffffff1a,#ffffff00 62%),linear-gradient(#3a3e44,#25282c); }
+  .cxKey.acc{ color:#1c1405; text-shadow:0 .1cqw 0 #ffffff40; background:radial-gradient(ellipse at 50% 22%,#fff5,#fff0 62%),linear-gradient(#e6ad32,#b9801a); }
+  .cxKey.go{ background:radial-gradient(ellipse at 50% 22%,#ffffff2a,#ffffff00 62%),linear-gradient(#34986f,#1e6b4f); }
+  .cxKey.rst{ background:radial-gradient(ellipse at 50% 22%,#ffffff2a,#ffffff00 62%),linear-gradient(#b3413a,#7a2520); font-size:2.9cqw; }
+  .cxKey.ar{ font-size:2.9cqw; }
+  .cxKc.dn .cxKey{ transform:translateY(.95cqw); filter:brightness(.9);
+    box-shadow:0 .15cqw 0 #040506,0 .3cqw .6cqw #000b,inset 0 .25cqw .3cqw #ffffff22,inset 0 -.3cqw .4cqw #0006; }
+
+  /* rear face */
+  .cxBkTitle{ font-size:5.4cqw; font-weight:600; letter-spacing:.35cqw; color:#c9d0d5; text-shadow:0 -.12cqw 0 #000b,0 .15cqw 0 #ffffff18; margin-top:1cqw; }
+  .cxBkTitle i{ font-style:normal; font-size:2.1cqw; color:#7d8892; letter-spacing:.3cqw; margin-left:2cqw; }
+  .cxBatt{ position:relative; width:80cqw; height:106cqw; margin-top:9cqw; border-radius:5cqw; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding-bottom:6cqw;
+    background:linear-gradient(160deg,#2a2d32,#1b1d20); box-shadow:inset 0 .5cqw 1.2cqw #000c,0 .3cqw 0 #ffffff12,inset 0 0 0 .3cqw #0007; }
+  .cxGrip{ width:46cqw; height:16cqw; border-radius:2cqw; margin-bottom:5cqw;
+    background:repeating-linear-gradient(0deg,#15171a 0 .7cqw,#2c3035 .7cqw 1.4cqw); box-shadow:inset 0 0 1cqw #000a; }
+  .cxBatt span{ font-size:3cqw; letter-spacing:.3cqw; color:#9aa4ad; font-weight:700; }
+  .cxBatt em{ font-style:normal; font-size:2.2cqw; letter-spacing:.25cqw; color:#6c7680; margin-top:1.4cqw; }
+  .cxBkInfo{ margin-top:7cqw; text-align:center; font-size:2.3cqw; line-height:1.9; letter-spacing:.25cqw; color:#6e7882; }
+  .cxBkPort{ position:absolute; left:50%; bottom:14cqw; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:1.6cqw; }
+  .cxUsb{ position:relative; width:14cqw; height:4cqw; border-radius:2cqw; background:#050607; box-shadow:inset 0 .35cqw .7cqw #000,0 .2cqw 0 #ffffff16; }
+  .cxUsb::after{ content:""; position:absolute; left:12%; right:12%; top:40%; height:20%; border-radius:1cqw; background:linear-gradient(#8a9097,#4a4f55); }
+  .cxBkPort span{ font-size:2cqw; letter-spacing:.3cqw; color:#6c7680; }
+  .cxBkHint{ position:absolute; left:0; right:0; bottom:5.2cqw; text-align:center; font-size:1.7cqw; letter-spacing:.3cqw; color:#4e5760; }
+
+  /* hidden info sheet (opened by the dot) */
+  .cxSheet{ position:absolute; inset:2.2cqw; z-index:10; border-radius:6.2cqw; background:#0b0d10; box-shadow:0 0 0 .3cqw #ffffff14,0 2cqw 6cqw #000;
+    display:flex; flex-direction:column; overflow:hidden; color:#c8d0d6; user-select:text; -webkit-user-select:text; }
+  .cxSheetHead{ display:flex; align-items:center; justify-content:space-between; padding:4.4cqw 5cqw 3cqw 6cqw; border-bottom:.3cqw solid #252b31; }
+  .cxSheetHead b{ font-size:4cqw; color:#fff; letter-spacing:.2cqw; }
+  .cxX{ appearance:none; border:0; background:#20262b; color:#c8d0d6; width:8cqw; height:8cqw; border-radius:50%; font-size:4.6cqw; line-height:1; cursor:pointer; }
+  .cxSheetBody{ overflow-x:hidden; overflow-y:auto; padding:2cqw 6cqw 8cqw; font-size:3.15cqw; line-height:1.55; -webkit-overflow-scrolling:touch; touch-action:pan-y; }
+  .cxSheetBody h3{ font-size:3.5cqw; margin:5cqw 0 1.6cqw; color:#efc04a; letter-spacing:.15cqw; }
+  .cxSheetBody p{ margin:0 0 2cqw; }
+  .cxSheetBody ul{ margin:1cqw 0 0; padding-left:5cqw; } .cxSheetBody li{ margin:.8cqw 0; }
+  .cxSheetBody b{ color:#fff; }
+  .cxSheetBody table{ border-collapse:collapse; width:100%; table-layout:fixed; min-width:0; font-family:inherit; font-size:2.9cqw; margin:1.4cqw 0; }
+  .cxSheetBody th,.cxSheetBody td{ border:.25cqw solid #2f3841; padding:1.2cqw 1.8cqw; text-align:left; vertical-align:top; font-family:inherit; font-size:2.9cqw; font-weight:400; white-space:normal; word-break:break-word; color:#c8d0d6; }
+  .cxSheetBody th{ font-weight:700; }
+  .cxSheetBody thead th{ position:static; }
+  .cxSheetBody th{ background:#1b2127; color:#fff; }
+  .cxOpts{ display:flex; flex-direction:column; gap:2.4cqw; margin-top:3cqw; }
+  .cxBtn{ appearance:none; border:.3cqw solid #39434b; background:#1d2328; color:#e8edf0; font:600 3.2cqw system-ui,Arial,sans-serif; padding:3cqw 4cqw; border-radius:3cqw; cursor:pointer; text-align:left; }
+  .cxBtn:hover{ border-color:#efc04a; }
+  .cxBtn small{ display:block; font-weight:400; color:#8c98a3; font-size:2.6cqw; margin-top:.5cqw; }
+  .cxMuted{ color:#8c98a3; }
 </style>
 </head>
 <body>
@@ -710,6 +820,7 @@
 
   <div class="topbar">
     <div class="brand"><b>Mental Math</b> <span class="dot">·</span> Trainer</div>
+    <button id="toCalc" class="view-switch" type="button">Calculator view</button>
   </div>
 
   <div class="get-app" id="getApp" hidden>
@@ -869,6 +980,101 @@
     </div>
   </div>
 
+</div>
+
+<div id="calcView" hidden>
+ <div id="cxStage"><div id="cxDev"><div id="cxFlip">
+
+  <!-- FRONT -->
+  <div class="cxFace cxFront">
+   <i class="cxScrew cxS1"></i><i class="cxScrew cxS2"></i><i class="cxScrew cxS3"></i><i class="cxScrew cxS4"></i>
+   <div class="cxBrand"><b>calcke</b><i>REV A</i></div>
+   <button class="cxDot" id="cxDot" type="button" aria-label="Info"></button>
+   <div class="cxBezel"><div class="cxWin"><canvas id="cxScr" width="800" height="480"></canvas></div><div class="cxBzCap">MEMORY LCD &middot; 400 &times; 240</div></div>
+   <div class="cxTag"><hr>mental maths that never gives the answer<hr></div>
+   <div class="cxPad" id="cxPad"></div>
+
+   <!-- hidden info sheet -->
+   <div class="cxSheet" id="cxSheet" hidden>
+    <div class="cxSheetHead"><b>calcke &middot; guide</b><button class="cxX" id="cxClose" type="button" aria-label="Close">&times;</button></div>
+    <div class="cxSheetBody">
+     <div class="cxOpts">
+      <button class="cxBtn" id="cxToNormal" type="button">Switch to normal mode<small>The full trainer with charts, history and reports</small></button>
+      <button class="cxBtn" id="cxFlipBtn" type="button">Turn the device over<small>See the back: battery door and USB-C</small></button>
+      <button class="cxBtn" id="cxSnd" type="button">Key sound: on</button>
+     </div>
+
+     <h3>WHAT IT IS</h3>
+     <p>A handheld mental-maths trainer. It shows a problem, you type your answer and press SUBMIT, and it checks and times you. It never shows the answer until you have committed yours; the result screen then shows <b>you</b> against the <b>key</b> and underlines the first digit that differs.</p>
+
+     <h3>KEYBOARD</h3>
+     <p>Digits and <b>.</b> as printed &middot; <b>Enter</b> SUBMIT &middot; <b>Backspace</b> DEL &middot; <b>M</b> MODE &middot; <b>S</b> SHIFT &middot; arrow keys &middot; <b>Esc</b> RESET.</p>
+
+     <h3>SHIFT LAYER</h3>
+     <p>Tap SHIFT, then a key within 4 seconds. Tap SHIFT again to cancel. The yellow text above a key is its SHIFT function.</p>
+     <table>
+      <tr><th>SHIFT +</th><th>Does</th></tr>
+      <tr><td>7 START/STOP</td><td>Start from the menu or result screen; quit from a problem or memorise screen</td></tr>
+      <tr><td>8 FAST</td><td>Toggle auto-submit</td></tr>
+      <tr><td>9 REPORT</td><td>Show the session report</td></tr>
+      <tr><td>4 PARAM+</td><td>Increase the selected setting</td></tr>
+      <tr><td>5 PARAM&minus;</td><td>Decrease the selected setting</td></tr>
+      <tr><td>6 JUMP</td><td>Next setting</td></tr>
+     </table>
+
+     <h3>MENU</h3>
+     <ul>
+      <li><b>MODE</b> next mode</li>
+      <li><b>UP / DOWN</b> (or <b>.</b>) pick a setting</li>
+      <li><b>LEFT / RIGHT</b> change it</li>
+      <li><b>0</b> toggle FAST</li>
+      <li><b>SUBMIT</b> start (resets the session stats)</li>
+     </ul>
+     <p class="cxMuted">Press any key on the boot screen to reach the menu. Settings are remembered.</p>
+
+     <h3>MODES</h3>
+     <table>
+      <tr><th>Mode</th><th>Problem &rarr; answer</th><th>Settings</th></tr>
+      <tr><td>SQ ROOT</td><td>4-digit number &rarr; its square root</td><td>sig figs 2&ndash;12</td></tr>
+      <tr><td>DAY</td><td>date 1600&ndash;2100 &rarr; press 1&ndash;7 (Mon=1 &hellip; Sun=7)</td><td>none</td></tr>
+      <tr><td>CUBE RT</td><td>a cube &rarr; its cube root</td><td>root digits 1&ndash;6</td></tr>
+      <tr><td>MEMORY</td><td>digits flash, then you type them back</td><td>digits 3&ndash;20, flash 0.5&ndash;10 s</td></tr>
+      <tr><td>MULTIPLY</td><td>a &times; b &rarr; exact product</td><td>1st / 2nd digits 1&ndash;9</td></tr>
+     </table>
+
+     <h3>DURING A ROUND</h3>
+     <ul>
+      <li>Type digits (up to 22). DEL removes the last one.</li>
+      <li>SUBMIT checks your answer (needs at least one digit).</li>
+      <li>FAST on: auto-submits once you've typed as many characters as the key has.</li>
+      <li>Quit to the menu: MODE twice within 1.5 s, or SHIFT+7.</li>
+     </ul>
+
+     <h3>RESULT SCREEN</h3>
+     <ul>
+      <li><b>CORRECT</b> exact match</li>
+      <li><b>CLOSE</b> (SQ ROOT only) within 0.01%</li>
+      <li><b>WRONG</b> anything else</li>
+      <li>SUBMIT next &middot; MODE menu &middot; SHIFT+9 report</li>
+     </ul>
+
+     <h3>HARDWARE</h3>
+     <p>Display: 400 &times; 240 memory LCD over SPI (SCLK 18, SI 23, SCS 17, DISP 19, pump SD 22). Key matrix: rows GPIO 13, 14, 25, 26, 27; columns GPIO 32, 33, 4, 35. Power: 2&times;AAA or USB-C. SWD programming pads on the board.</p>
+    </div>
+   </div>
+  </div>
+
+  <!-- BACK -->
+  <div class="cxFace cxBack" id="cxBack">
+   <i class="cxScrew cxS1"></i><i class="cxScrew cxS2"></i><i class="cxScrew cxS3"></i><i class="cxScrew cxS4"></i>
+   <div class="cxBkTitle">calcke<i>REV A</i></div>
+   <div class="cxBatt"><div class="cxGrip"></div><span>BAT &middot; 2 &times; AAA</span><em>&#9660; SLIDE TO OPEN</em></div>
+   <div class="cxBkInfo">MENTAL MATHS TRAINER<br>400 &times; 240 MEMORY LCD</div>
+   <div class="cxBkPort"><div class="cxUsb"></div><span>USB-C</span></div>
+   <div class="cxBkHint">TAP TO TURN OVER</div>
+  </div>
+
+ </div></div></div>
 </div>
 
 <script>
@@ -2480,6 +2686,197 @@
   renderStats();
   resetStage();
   tickStopwatch();
+})();
+</script>
+<script>
+(function(){
+"use strict";
+/* ================= calcke device view ================= */
+var $=function(id){return document.getElementById(id)};
+var view=$('calcView'), flip=$('cxFlip'), sheet=$('cxSheet');
+var VIEW_KEY='calcke_view';
+function isOn(){return !view.hidden}
+function sheetOpen(){return !sheet.hidden}
+
+/* ---- keypad (same matrix as the PCB) ---- */
+var K=[['SHIFT','',0,0],['MODE','',0,1],['DEL','',0,2],['UP','',0,3],
+['7','START/STOP',1,0],['8','FAST',1,1],['9','REPORT',1,2],['LEFT','',1,3],
+['4','PARAM+',2,0],['5','PARAM-',2,1],['6','JUMP',2,2],['RIGHT','',2,3],
+['1','',3,0],['2','',3,1],['3','',3,2],['DOWN','',3,3],
+['0','',4,0],['.','',4,1],['SUBMIT','',4,2],['RESET','',4,3]];
+var GLY={UP:'▲',DOWN:'▼',LEFT:'◀',RIGHT:'▶'};
+var CLS={SHIFT:'acc',SUBMIT:'go',RESET:'rst',MODE:'fn',DEL:'fn',UP:'fn ar',DOWN:'fn ar',LEFT:'fn ar',RIGHT:'fn ar','.':'fn'};
+$('cxPad').innerHTML=K.map(function(k){var id=k[0];
+ return '<div class="cxKc" data-id="'+id+'"><div class="cxSh">'+k[1]+'</div><div class="cxWell"><div class="cxKey '+(CLS[id]||'')+'">'+(GLY[id]||id)+'</div></div></div>'}).join('');
+var EL={};Array.prototype.forEach.call(document.querySelectorAll('#cxPad .cxKc'),function(e){EL[e.dataset.id]=e});
+
+/* ---- calcke logic ---- */
+var MODES=['SQ ROOT','DAY','CUBE RT','MEMORY','MULTIPLY'],PN=[1,0,1,2,2];
+var MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],DN=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+var cfg={sf:10,cube:4,memN:6,memT:6,mulA:3,mulB:2,fast:false};
+try{Object.assign(cfg,JSON.parse(localStorage.getItem('calckeCfg')||'{}'))}catch(e){}
+function PR(m,w){return m==0?['sf','sig figs',2,12]:m==2?['cube','root digits',1,6]:m==3?(w==0?['memN','digits',3,20]:['memT','flash time',1,20]):(w==0?['mulA','1st digits',1,9]:['mulB','2nd digits',1,9])}
+function pv(m,w){var p=PR(m,w);return p[0]=='memT'?(cfg.memT*.5).toFixed(1)+' s':cfg[p[0]]}
+var mode=0,which=0,st='boot',prev='menu',ans='',P={},verdict=0,lastMs=0,t0=0,tB=0,tE=0,quit=0,shUntil=0,nA=0,nC=0,tSum=0,best=0;
+var R=function(a,b){return a+Math.floor(Math.random()*(b-a+1))},p10=function(n){return Math.pow(10,n)};
+function dow(y,m,d){var t=[0,3,2,5,0,3,5,1,4,6,2,4];if(m<3)y--;return(y+(y/4|0)-(y/100|0)+(y/400|0)+t[m-1]+d)%7}
+function dim(y,m){return m==2&&((y%4==0&&y%100!=0)||y%400==0)?29:[31,28,31,30,31,30,31,31,30,31,30,31][m-1]}
+function gen(){P={};
+ if(mode==0){var n=R(1000,9999);P.text=''+n;P.key=Math.sqrt(n).toFixed(cfg.sf-2)}
+ else if(mode==1){var y=R(1600,2100),m=R(1,12),d=R(1,dim(y,m)),w=dow(y,m,d)||7;P.day=w;P.text=MO[m-1]+' '+d+', '+y;P.key=''+w;P.show=w+'='+DN[w-1]}
+ else if(mode==2){var r=R(cfg.cube==1?1:p10(cfg.cube-1),p10(cfg.cube)-1);P.text=(BigInt(r)**3n)+'';P.key=''+r}
+ else if(mode==4){var f=function(n){return n==1?2:p10(n-1)},a=R(f(cfg.mulA),p10(cfg.mulA)-1),b=R(f(cfg.mulB),p10(cfg.mulB)-1);P.text=a+' x '+b;P.key=(BigInt(a)*BigInt(b))+''}
+ else{var s='';for(var i=0;i<cfg.memN;i++)s+=R(0,9);P.key=s;P.text=s.replace(/(\d{3})(?=\d)/g,'$1 ')}
+ P.show=P.show||P.key}
+function judge(){if(!ans)return 2;
+ if(mode==0){var u=parseFloat(ans),t=parseFloat(P.key);if(u.toFixed(cfg.sf-2)===P.key)return 0;return Math.abs(u-t)/t<1e-4?1:2}
+ if(mode==1)return ans.length==1&&+ans==P.day?0:2;
+ if(mode==3)return ans===P.key?0:2;
+ return /^\d+$/.test(ans)&&BigInt(ans)==BigInt(P.key)?0:2}
+function save(){try{localStorage.setItem('calckeCfg',JSON.stringify(cfg))}catch(e){}}
+function startAns(){st='answer';t0=Date.now();ans=''}
+function startProb(){gen();ans='';if(mode==3){st='show';tB=Date.now();tE=tB+cfg.memT*500}else startAns()}
+function submit(){lastMs=Date.now()-t0;verdict=judge();nA++;tSum+=lastMs;if(verdict==0){nC++;if(!best||lastMs<best)best=lastMs}st='result'}
+function onKey(k){
+ if(st=='boot'){st='menu';return}
+ if(st=='report'){st=prev;return}
+ var np=PN[mode];
+ if(st=='menu'){
+  if(k=='M'){mode=(mode+1)%5;which=0}
+  else if(k=='.'||k=='N'||k=='J'){if(np)which=(which+1)%np}
+  else if(k=='U'){if(np)which=(which+np-1)%np}
+  else if(k=='0'||k=='F')cfg.fast=!cfg.fast;
+  else if(k=='L'||k=='R'||k=='-'||k=='+'){var p=PR(mode,which),d=(k=='R'||k=='+')?1:-1;if(np)cfg[p[0]]=Math.min(p[3],Math.max(p[2],cfg[p[0]]+d))}
+  else if(k=='P'){if(nA){prev='menu';st='report'}}
+  else if(k=='E'||k=='T'){save();nA=nC=tSum=best=0;startProb()}
+ }else if(st=='show'){if(k=='M'||k=='T')st='menu'}
+ else if(st=='answer'){
+  if(k=='M'){if(Date.now()<quit){st='menu';quit=0}else quit=Date.now()+1500}
+  else if(k=='T'){st='menu';quit=0}
+  else if(k=='F')cfg.fast=!cfg.fast;
+  else if(/^[0-9]$/.test(k)){
+   if(mode==1){if(k>='1'&&k<='7'){ans=k;submit()}}
+   else if(ans.length<22){ans+=k;if(cfg.fast&&ans.length==P.key.length)submit()}}
+  else if(k=='.'&&mode==0&&ans.indexOf('.')<0&&ans.length<22)ans+='.';
+  else if(k=='D')ans=ans.slice(0,-1);
+  else if(k=='E'&&ans)submit();
+ }else if(st=='result'){
+  if(k=='E'||k=='T')startProb();else if(k=='M')st='menu';else if(k=='F')cfg.fast=!cfg.fast;else if(k=='P'){prev='result';st='report'}}
+}
+var MK={MODE:'M',DEL:'D',UP:'U',DOWN:'N',LEFT:'L',RIGHT:'R',SUBMIT:'E'},SH={'7':'T','8':'F','9':'P','4':'+','5':'-','6':'J'};
+function press(id){
+ if(id=='RESET'){st='boot';ans='';shUntil=0;nA=nC=tSum=best=0;return}
+ if(id=='SHIFT'){shUntil=Date.now()<shUntil?0:Date.now()+4000;return}
+ var k=MK[id]||id;if(Date.now()<shUntil){shUntil=0;k=SH[k]||k}
+ onKey(k)}
+
+/* ---- 400x240 memory-LCD (drawn at 2x) ---- */
+var cv=$('cxScr'),g=cv.getContext('2d');g.setTransform(2,0,0,2,0,0);
+var BG='#d5d9cc',INK='#14171a';
+function F(sz){return 'bold '+sz+'px "Courier New",monospace'}
+function T(s,x,y,sz,al,col){g.font=F(sz);g.textAlign=al||'left';g.fillStyle=col||INK;g.fillText(s,x,y)}
+function fit(s,mw,sz){g.font=F(sz);while(sz>10&&g.measureText(s).width>mw)g.font=F(--sz);return sz}
+function bar(l,r){g.fillStyle=INK;g.fillRect(0,0,400,24);T(l,8,17,15,'left',BG);T(r,392,17,13,'right',BG)}
+function foot(s){g.fillStyle=INK;g.fillRect(8,212,384,1);T(s,200,230,fit(s,384,12),'center')}
+function flags(){return (Date.now()<shUntil?'SHIFT ':'')+(cfg.fast?'FAST':'')}
+function draw(){
+ if(!isOn())return;
+ g.fillStyle=BG;g.fillRect(0,0,400,240);
+ var now=Date.now();
+ if(st=='show'&&now>=tE)startAns();
+ if(st=='boot'){T('calcke',200,112,64,'center');T('mental maths that never gives the answer',200,146,12,'center');if(now%1000<600)T('press any key',200,200,16,'center')}
+ else if(st=='menu'){
+  bar('SETTINGS',flags());
+  MODES.forEach(function(m,i){var w=76,x=6+i*77;if(i==mode){g.fillStyle=INK;g.fillRect(x,32,w,22)}T(m,x+w/2,48,12,'center',i==mode?BG:INK);if(i!=mode){g.strokeStyle=INK;g.lineWidth=1;g.strokeRect(x+.5,32.5,w,22)}});
+  T(MODES[mode],200,100,36,'center');
+  if(!PN[mode])T('Mon=1 ... Sun=7',200,150,20,'center');T(PN[mode]?'':'no settings',200,176,13,'center');
+  for(var w=0;w<PN[mode];w++){var p=PR(mode,w),y=124+w*38,sel=w==which;if(sel){g.fillStyle=INK;g.fillRect(14,y-22,372,32)}
+   T((sel?'> ':'  ')+p[1],24,y,20,'left',sel?BG:INK);T(''+pv(mode,w),376,y,22,'right',sel?BG:INK)}
+  foot('MODE next  UP/DOWN pick  LEFT/RIGHT change  SUBMIT start')}
+ else if(st=='show'){bar('MEMORISE',flags());T(P.text,200,130,fit(P.text,380,64),'center');
+  g.fillStyle=INK;g.fillRect(20,186,360*Math.max(0,(tE-now)/(tE-tB)),10);g.strokeStyle=INK;g.strokeRect(20.5,186.5,360,10);foot('remember it...')}
+ else if(st=='answer'){bar(MODES[mode],((now-t0)/1000).toFixed(1)+'s '+flags());
+  if(mode==3)T('type the digits',200,92,26,'center');else T(P.text,200,92,fit(P.text,380,54),'center');
+  g.fillStyle=INK;g.fillRect(8,112,384,2);
+  if(mode==1)T('press 1 - 7',200,170,34,'center');
+  else{var a=ans+(now%800<500?'_':' ');T(a,14,170,fit(a,372,46),'left')}
+  foot(now<quit?'press MODE again to quit':mode==1?'1=Mon 2=Tue ... 7=Sun':'type answer, SUBMIT to check')}
+ else if(st=='result'){bar(MODES[mode],'RESULT');
+  T(['CORRECT','CLOSE','WRONG'][verdict],14,66,46);T((lastMs/1000).toFixed(1)+'s',386,60,28,'right');
+  var you=mode==1?(ans?ans+'='+DN[ans-1]:'-'):(ans||'-'),key=P.show,sz=fit(you.length>key.length?you:key,300,26);
+  T('you',14,114,16);T(you,70,114,sz);T('key',14,150,16);T(key,70,150,sz);
+  if(verdict&&mode!=1&&ans){var i=0;while(ans[i]&&key[i]&&ans[i]==key[i])i++;g.font=F(sz);var x2=70+g.measureText(key.slice(0,i)).width,w2=g.measureText('M').width;g.fillStyle=INK;g.fillRect(x2,154,w2,3)}
+  T(nC+'/'+nA+'   avg '+(tSum/1000/nA).toFixed(1)+'s   best '+(best/1000).toFixed(1)+'s',200,196,15,'center');
+  foot('SUBMIT next   MODE menu   SH+9 report')}
+ else if(st=='report'){bar('REPORT','');
+  [['attempts',nA],['correct',nC],['accuracy',nA?Math.round(100*nC/nA)+'%':'-'],['average',nA?(tSum/1000/nA).toFixed(1)+' s':'-'],['best',best?(best/1000).toFixed(1)+' s':'-']].forEach(function(r,i){T(r[0],30,64+i*30,20);T(''+r[1],370,64+i*30,22,'right')});
+  foot('press any key')}
+}
+
+/* ---- sound ---- */
+var snd=true,ac;try{snd=localStorage.getItem('calckeSnd')!=='0'}catch(e){}
+function sndLabel(){$('cxSnd').textContent='Key sound: '+(snd?'on':'off')}
+sndLabel();
+$('cxSnd').onclick=function(){snd=!snd;sndLabel();try{localStorage.setItem('calckeSnd',snd?'1':'0')}catch(e){}};
+function click(){if(!snd)return;try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();var o=ac.createOscillator(),v=ac.createGain(),t=ac.currentTime;
+ o.type='square';o.frequency.setValueAtTime(2400,t);o.frequency.exponentialRampToValueAtTime(900,t+.02);
+ v.gain.setValueAtTime(.035,t);v.gain.exponentialRampToValueAtTime(.0001,t+.03);o.connect(v);v.connect(ac.destination);o.start(t);o.stop(t+.035)}catch(e){}}
+
+/* ---- key input ---- */
+var down={};
+function dn(id){if(down[id])return;down[id]=1;if(EL[id])EL[id].classList.add('dn');click();press(id)}
+function up(id){delete down[id];if(EL[id])EL[id].classList.remove('dn')}
+Object.keys(EL).forEach(function(id){var e=EL[id];
+ e.addEventListener('pointerdown',function(ev){ev.preventDefault();dn(id)});
+ ['pointerup','pointerleave','pointercancel'].forEach(function(t){e.addEventListener(t,function(){up(id)})})});
+var KM={Enter:'SUBMIT',Backspace:'DEL',ArrowUp:'UP',ArrowDown:'DOWN',ArrowLeft:'LEFT',ArrowRight:'RIGHT',m:'MODE',M:'MODE',s:'SHIFT',S:'SHIFT',Escape:'RESET',',':'.'};
+function kid(e){return KM[e.key]||(/^[0-9.]$/.test(e.key)?e.key:null)}
+/* capture on window, so the trainer's own key handler never sees keys while the device is showing */
+window.addEventListener('keydown',function(e){
+ if(!isOn())return;
+ e.stopImmediatePropagation();
+ if(sheetOpen()){if(e.key==='Escape'){e.preventDefault();closeSheet()}return}
+ if(flip.classList.contains('flipped')){if(e.key==='Escape'){e.preventDefault();flip.classList.remove('flipped')}return}
+ var id=kid(e);
+ if(id){e.preventDefault();if(!e.repeat||/^(DEL|UP|DOWN|LEFT|RIGHT)$/.test(id)){up(id);dn(id)}}
+},true);
+window.addEventListener('keyup',function(e){
+ if(!isOn())return;
+ e.stopImmediatePropagation();
+ var id=kid(e);if(id)up(id);
+},true);
+
+/* ---- hidden dot, info sheet, flip ---- */
+function openSheet(){sheet.hidden=false;var b=sheet.querySelector('.cxSheetBody');if(b)b.scrollTop=0}
+function closeSheet(){sheet.hidden=true}
+$('cxDot').addEventListener('click',function(){sheetOpen()?closeSheet():openSheet()});
+$('cxClose').addEventListener('click',closeSheet);
+$('cxFlipBtn').addEventListener('click',function(){closeSheet();flip.classList.add('flipped')});
+$('cxBack').addEventListener('click',function(){flip.classList.remove('flipped')});
+
+/* ---- switching between normal mode and device mode ---- */
+function stopTrainer(){
+ try{
+  var s=$('startStopBtn');
+  if(s&&s.classList.contains('stop-state'))s.click();
+  var ov=$('reportOverlay');
+  if(ov&&!ov.hidden){var c=$('reportCloseBtn');if(c)c.click()}
+ }catch(e){}
+}
+function setView(calc){
+ try{if(document.activeElement)document.activeElement.blur()}catch(e){}
+ if(calc){stopTrainer()}
+ else{Object.keys(down).forEach(up);closeSheet();flip.classList.remove('flipped')}
+ view.hidden=!calc;
+ document.body.classList.toggle('calc-on',calc);
+ try{localStorage.setItem(VIEW_KEY,calc?'calc':'normal')}catch(e){}
+ if(calc){window.scrollTo(0,0);draw()}
+}
+$('toCalc').addEventListener('click',function(){setView(true)});
+$('cxToNormal').addEventListener('click',function(){setView(false)});
+var saved=null;try{saved=localStorage.getItem(VIEW_KEY)}catch(e){}
+if(saved==='calc')setView(true);
+setInterval(draw,100);
 })();
 </script>
 <script>
