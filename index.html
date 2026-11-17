@@ -59,6 +59,12 @@
     gap:0;
   }
   html.desktop .app{ max-width:none; width:100%; padding-left:32px; padding-right:32px; }
+  @media (min-width:900px){
+    .app{ max-width:min(1200px,94vw); padding-left:40px; padding-right:40px; }
+  }
+  @media (min-width:1280px){
+    .app{ max-width:min(1320px,92vw); }
+  }
   .topbar{
     display:flex;
     align-items:baseline;
