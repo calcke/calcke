@@ -716,23 +716,23 @@
       url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .06 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
       radial-gradient(ellipse at 50% 25%,#3b4046 0%,#171a1d 70%,#0e1012 100%); }
   #calcView *{ box-sizing:border-box; }
-  #cxStage{ width:min(94vw,calc(94vh*.412)); aspect-ratio:666/1616; container-type:inline-size; position:relative; flex-shrink:0; }
-  @supports (height:1dvh){ #cxStage{ width:min(94vw,calc(94dvh*.412)); } }
+  #cxStage{ width:min(94vw,calc(94vh*.438)); aspect-ratio:78/178; container-type:inline-size; position:relative; flex-shrink:0; }
+  @supports (height:1dvh){ #cxStage{ width:min(94vw,calc(94dvh*.438)); } }
   #cxDev{ width:100%; height:100%; perspective:220cqw; }
   #cxFlip{ position:relative; width:100%; height:100%; transform-style:preserve-3d; transition:transform .75s cubic-bezier(.3,.1,.2,1); }
   #cxFlip.flipped{ transform:rotateY(180deg); }
-  .cxFace{ position:absolute; inset:0; border-radius:8cqw; -webkit-backface-visibility:hidden; backface-visibility:hidden;
+  .cxFace{ position:absolute; inset:0; border-radius:6cqw; -webkit-backface-visibility:hidden; backface-visibility:hidden;
     background:
       url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
       linear-gradient(155deg,#363a41 0%,#212428 45%,#17191c 100%);
     box-shadow:0 0 0 .35cqw #090a0c,0 0 0 .7cqw #ffffff0c,0 5cqw 9cqw #000d,0 1cqw 2.5cqw #000a,
       inset 0 .5cqw .7cqw #ffffff22,inset 0 -.9cqw 1.4cqw #0009; }
-  .cxFront{ display:flex; flex-direction:column; padding:9.5cqw 6cqw 7cqw; }
-  .cxBack{ transform:rotateY(180deg); background-position:0 0,0 0; padding:9.5cqw 6cqw 7cqw; display:flex; flex-direction:column; align-items:center; cursor:pointer; }
+  .cxFront{position:absolute; inset:0; padding:0;}
+  .cxBack{ transform:rotateY(180deg); background-position:0 0,0 0; padding:8cqw 7.5cqw 6cqw; display:flex; flex-direction:column; align-items:center; cursor:pointer; }
   #cxFlip.flipped .cxFront{ pointer-events:none; }
   #cxFlip:not(.flipped) .cxBack{ pointer-events:none; }
 
-  .cxBrand{ display:flex; justify-content:center; align-items:baseline; gap:2cqw; margin-bottom:3.4cqw; }
+  .cxBrand{position:absolute; top:4.2cqw; left:0; right:0; display:flex; justify-content:center; align-items:baseline; gap:2cqw; margin:0; transform:translateX(-10.3cqw);}
   .cxBrand b{ font-size:5.4cqw; font-weight:600; letter-spacing:.35cqw; color:#dde3e7; text-shadow:0 -.12cqw 0 #000b,0 .15cqw 0 #ffffff18; }
   .cxBrand i{ font-style:normal; font-size:2.1cqw; color:#7d8892; letter-spacing:.3cqw; }
   .cxScrew{ position:absolute; width:3.6cqw; height:3.6cqw; border-radius:50%;
@@ -742,38 +742,35 @@
   .cxS1{ left:3.9cqw; top:3.9cqw; } .cxS2{ right:3.9cqw; top:3.9cqw; } .cxS3{ left:3.9cqw; bottom:3.9cqw; } .cxS4{ right:3.9cqw; bottom:3.9cqw; }
 
   /* the hidden dot */
-  .cxDot{ position:absolute; top:9.4cqw; right:21cqw; width:7cqw; height:7cqw; padding:0; border:0; background:none; cursor:pointer; z-index:3; }
+  .cxDot{position:absolute; top:4cqw; right:9cqw; width:7cqw; height:7cqw; padding:0; border:0; background:none; cursor:pointer; z-index:3;}
   .cxDot::before{ content:""; position:absolute; left:50%; top:50%; width:1.3cqw; height:1.3cqw; margin:-.65cqw 0 0 -.65cqw; border-radius:50%;
     background:#16181b; box-shadow:inset 0 .15cqw .2cqw #000,0 .12cqw 0 #ffffff14; }
 
-  .cxBezel{ background:linear-gradient(#040505,#0d0f10); border-radius:2.4cqw; padding:3cqw 3cqw 1.6cqw;
-    box-shadow:inset 0 0 0 .25cqw #ffffff12,inset 0 .5cqw 1cqw #000,0 .3cqw 0 #ffffff12,0 -.2cqw 0 #0008; }
-  .cxWin{ position:relative; aspect-ratio:400/240; border-radius:.6cqw; overflow:hidden; background:#d5d9cc; box-shadow:0 0 0 .3cqw #000,inset 0 0 1.4cqw #000a; }
+  .cxSeam{ position:absolute; left:1.4cqw; right:1.4cqw; bottom:2.1cqw; height:.45cqw; border-radius:1cqw; background:linear-gradient(90deg,#0000,#e0a526 6%,#e0a526 94%,#0000); opacity:.9; box-shadow:0 0 .6cqw #e0a52655; }
+  .cxBezel{position:absolute; left:9.2cqw; top:18.9cqw; width:81.5cqw; padding:3.6cqw 1.75cqw; border-radius:2.4cqw; background:none; box-shadow:none;}
+  .cxWin{position:relative; width:78cqw; height:46.8cqw; overflow:hidden; background:#d5d9cc; box-shadow:none;}
   .cxWin canvas{ width:100%; height:100%; display:block; }
   .cxWin::after{ content:""; position:absolute; inset:0; pointer-events:none;
     background:linear-gradient(112deg,#ffffff38 0%,#ffffff00 36%,#ffffff00 62%,#ffffff12 100%),radial-gradient(ellipse at 50% 50%,#0000 65%,#0002 100%); }
-  .cxBzCap{ text-align:center; font-size:1.7cqw; letter-spacing:.35cqw; color:#3b4349; padding-top:1.2cqw; }
+  .cxBzCap{display:none;}
 
-  .cxTag{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.4cqw;
-    font-size:2.3cqw; letter-spacing:.25cqw; color:#76808a; text-shadow:0 .12cqw 0 #000a; min-height:6cqw; }
+  .cxTag{position:absolute; top:76.5cqw; left:0; right:0; display:flex; flex-direction:column; align-items:center; gap:1.2cqw; font-size:2.1cqw; letter-spacing:.2cqw; color:#76808a; text-shadow:0 .12cqw 0 #000a; margin:0; transform:translateX(-10.3cqw);}
   .cxTag hr{ width:30cqw; border:0; height:.3cqw; background:linear-gradient(90deg,#0000,#00000099,#0000); margin:0; }
 
-  .cxPad{ display:grid; grid-template-columns:repeat(4,1fr); grid-auto-rows:23.2cqw; }
-  .cxKc{ position:relative; display:flex; flex-direction:column; align-items:center; touch-action:none; cursor:pointer; }
-  .cxSh{ height:4.4cqw; line-height:4.4cqw; font-size:2cqw; font-weight:700; letter-spacing:.08cqw; white-space:nowrap; color:#efc04a; text-shadow:0 .1cqw 0 #000a; }
-  .cxWell{ width:17.8cqw; height:15.2cqw; margin-top:.2cqw; border-radius:2.1cqw; background:#08090a; padding-top:.5cqw;
-    display:flex; justify-content:center; align-items:flex-start; box-shadow:inset 0 .5cqw .9cqw #000,0 .2cqw 0 #ffffff16,0 -.15cqw 0 #0009; }
-  .cxKey{ width:16.2cqw; height:13.4cqw; border-radius:1.9cqw; display:flex; align-items:center; justify-content:center;
-    font:700 3.3cqw Arial,Helvetica,sans-serif; letter-spacing:.1cqw; color:#eef1f3; text-shadow:0 -.1cqw 0 #0008;
-    background:radial-gradient(ellipse at 50% 22%,#ffffff22,#ffffff00 62%),linear-gradient(#5a6068,#3d4247);
-    box-shadow:0 1.1cqw 0 #040506,0 1.7cqw 1.7cqw #000b,inset 0 .25cqw .3cqw #ffffff33,inset 0 -.45cqw .6cqw #0007;
-    transition:transform .045s,box-shadow .045s; }
-  .cxKey.fn{ background:radial-gradient(ellipse at 50% 22%,#ffffff1a,#ffffff00 62%),linear-gradient(#3a3e44,#25282c); }
-  .cxKey.acc{ color:#1c1405; text-shadow:0 .1cqw 0 #ffffff40; background:radial-gradient(ellipse at 50% 22%,#fff5,#fff0 62%),linear-gradient(#e6ad32,#b9801a); }
-  .cxKey.go{ background:radial-gradient(ellipse at 50% 22%,#ffffff2a,#ffffff00 62%),linear-gradient(#34986f,#1e6b4f); }
-  .cxKey.rst{ background:radial-gradient(ellipse at 50% 22%,#ffffff2a,#ffffff00 62%),linear-gradient(#b3413a,#7a2520); font-size:2.9cqw; }
-  .cxKey.ar{ font-size:2.9cqw; }
-  .cxKc.dn .cxKey{ transform:translateY(.95cqw); filter:brightness(.9);
+  .cxPad{position:absolute; left:11.4cqw; top:93.6cqw; width:76.8cqw; display:grid; grid-template-columns:repeat(4,19.2cqw); grid-auto-rows:19.2cqw; margin:0;}
+  .cxKc{ position:relative; touch-action:none; cursor:pointer; }
+  .cxSh{ position:absolute; top:.4cqw; left:-3cqw; right:-3cqw; height:2.6cqw; line-height:2.6cqw; text-align:center; font-size:2.2cqw; font-weight:700; letter-spacing:.06cqw; white-space:nowrap; color:#e0a526; text-shadow:0 .08cqw 0 #000c; }
+  .cxWell{ position:absolute; left:50%; top:3.2cqw; transform:translateX(-50%); width:15.8cqw; height:15.8cqw; border-radius:2cqw; background:#08090a;
+    display:flex; justify-content:center; align-items:center; box-shadow:inset 0 .5cqw .9cqw #000,0 .2cqw 0 #ffffff16,0 -.15cqw 0 #0009; }
+  .cxKey{width:14.6cqw; height:14.6cqw; border-radius:1.7cqw; display:flex; align-items:center; justify-content:center; font:700 4.3cqw Arial,Helvetica,sans-serif; letter-spacing:.05cqw; color:#1c2023; text-shadow:0 .08cqw 0 #ffffff55; background:linear-gradient(#f3ecda,#d8cfb7); box-shadow:0 1.1cqw 0 #8f8772,0 1.7cqw 1.7cqw #000b,inset 0 .2cqw .3cqw #ffffff77; transition:transform .045s,box-shadow .045s;}
+  .cxKey.fn{ color:#f1ecde; text-shadow:0 -.08cqw 0 #000a; background:radial-gradient(ellipse at 50% 20%,#ffffff1c,#ffffff00 60%),linear-gradient(#3b4046,#24282c); box-shadow:0 1cqw 0 #060708,0 1.5cqw 1.4cqw #000b,inset 0 .25cqw .3cqw #ffffff22,inset 0 -.4cqw .5cqw #0007; }
+  .cxKey.acc{font-size:3.2cqw; letter-spacing:.04cqw; white-space:nowrap; color:#1c1405; text-shadow:0 .08cqw 0 #ffffff40; background:linear-gradient(#f0b53a,#c98a22); box-shadow:0 1.1cqw 0 #7d5312,0 1.7cqw 1.7cqw #000b,inset 0 .2cqw .3cqw #ffffff44;}
+  .cxKey.go{font-size:2.9cqw; letter-spacing:0; white-space:nowrap; color:#0f1a13; text-shadow:0 .08cqw 0 #ffffff30; background:linear-gradient(#3fae7c,#1f7150); box-shadow:0 1.1cqw 0 #123f2e,0 1.7cqw 1.7cqw #000b,inset 0 .2cqw .3cqw #ffffff33;}
+  .cxKey.rst{font-size:2.9cqw; letter-spacing:0; white-space:nowrap; color:#f1ecde; text-shadow:0 -.08cqw 0 #000a; background:linear-gradient(#bf4d43,#7f2c26); box-shadow:0 1.1cqw 0 #4f1a16,0 1.7cqw 1.7cqw #000b,inset 0 .2cqw .3cqw #ffffff33;}
+  .cxKc[data-id="RESET"] .cxKey{font-size:2.9cqw; letter-spacing:0; white-space:nowrap;}
+  .cxKey.go{ font-size:2.9cqw; }
+  .cxKey.ar{ font-size:3.6cqw; }
+  .cxKc.dn .cxKey{ transform:translateY(.8cqw); filter:brightness(.9);
     box-shadow:0 .15cqw 0 #040506,0 .3cqw .6cqw #000b,inset 0 .25cqw .3cqw #ffffff22,inset 0 -.3cqw .4cqw #0006; }
 
   /* rear face */
@@ -785,7 +782,12 @@
     background:repeating-linear-gradient(0deg,#15171a 0 .7cqw,#2c3035 .7cqw 1.4cqw); box-shadow:inset 0 0 1cqw #000a; }
   .cxBatt span{ font-size:3cqw; letter-spacing:.3cqw; color:#9aa4ad; font-weight:700; }
   .cxBatt em{ font-style:normal; font-size:2.2cqw; letter-spacing:.25cqw; color:#6c7680; margin-top:1.4cqw; }
-  .cxBkInfo{ margin-top:7cqw; text-align:center; font-size:2.3cqw; line-height:1.9; letter-spacing:.25cqw; color:#6e7882; }
+  .cxBkInfo{ position:absolute; left:0; right:0; bottom:24cqw; text-align:center; font-size:2.3cqw; line-height:1.9; letter-spacing:.25cqw; color:#6e7882; }
+  .cxBkBody{ position:relative; width:100%; flex:1; margin-top:4cqw; }
+  .cxGripL,.cxGripR{ position:absolute; top:14cqw; width:4.2cqw; height:58cqw; border-radius:2cqw; background:repeating-linear-gradient(0deg,#15171a 0 .7cqw,#2c3035 .7cqw 1.4cqw); box-shadow:inset 0 0 1cqw #000a,0 .2cqw 0 #ffffff10; }
+  .cxGripL{ left:3cqw; } .cxGripR{ right:3cqw; }
+  .cxEyelet{ position:absolute; left:50%; top:1cqw; width:5.2cqw; height:5.2cqw; margin-left:-2.6cqw; border-radius:50%; background:#050607; box-shadow:inset 0 .3cqw .6cqw #000,0 0 0 .5cqw #2b2f35; }
+  .cxMagnet{ position:absolute; left:50%; top:62cqw; width:9cqw; height:9cqw; margin:-4.5cqw 0 0 -4.5cqw; border-radius:50%; background:radial-gradient(circle at 35% 30%,#c9ced4,#6b7177 72%); box-shadow:inset 0 0 .5cqw #0008,0 0 0 .3cqw #000; }
   .cxBkPort{ position:absolute; left:50%; bottom:14cqw; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; gap:1.6cqw; }
   .cxUsb{ position:relative; width:14cqw; height:4cqw; border-radius:2cqw; background:#050607; box-shadow:inset 0 .35cqw .7cqw #000,0 .2cqw 0 #ffffff16; }
   .cxUsb::after{ content:""; position:absolute; left:12%; right:12%; top:40%; height:20%; border-radius:1cqw; background:linear-gradient(#8a9097,#4a4f55); }
@@ -813,6 +815,9 @@
   .cxBtn:hover{ border-color:#efc04a; }
   .cxBtn small{ display:block; font-weight:400; color:#8c98a3; font-size:2.6cqw; margin-top:.5cqw; }
   .cxMuted{ color:#8c98a3; }
+  .cxKc[data-id="RESET"] .cxWell{background:transparent; box-shadow:none;}
+  .cxKc[data-id="SHIFT"] .cxWell{background:transparent; box-shadow:none;}
+  .cxKc[data-id="SUBMIT"] .cxWell{background:transparent; box-shadow:none;}
 </style>
 </head>
 <body>
@@ -987,11 +992,11 @@
 
   <!-- FRONT -->
   <div class="cxFace cxFront">
-   <i class="cxScrew cxS1"></i><i class="cxScrew cxS2"></i><i class="cxScrew cxS3"></i><i class="cxScrew cxS4"></i>
+   <i class="cxSeam"></i>
    <div class="cxBrand"><b>calcke</b><i>REV A</i></div>
    <button class="cxDot" id="cxDot" type="button" aria-label="Info"></button>
    <div class="cxBezel"><div class="cxWin"><canvas id="cxScr" width="800" height="480"></canvas></div><div class="cxBzCap">MEMORY LCD &middot; 400 &times; 240</div></div>
-   <div class="cxTag"><hr>mental maths that never gives the answer<hr></div>
+   <div class="cxTag"><span>Mental math training calculator</span><span>Others give you answers. This one makes you find them.</span></div>
    <div class="cxPad" id="cxPad"></div>
 
    <!-- hidden info sheet -->
@@ -1000,7 +1005,7 @@
     <div class="cxSheetBody">
      <div class="cxOpts">
       <button class="cxBtn" id="cxToNormal" type="button">Switch to normal mode<small>The full trainer with charts, history and reports</small></button>
-      <button class="cxBtn" id="cxFlipBtn" type="button">Turn the device over<small>See the back: battery door and USB-C</small></button>
+      <button class="cxBtn" id="cxFlipBtn" type="button">Turn the device over<small>See the back: four screws, grip, USB-C</small></button>
       <button class="cxBtn" id="cxSnd" type="button">Key sound: on</button>
      </div>
 
@@ -1011,15 +1016,20 @@
      <p>Digits and <b>.</b> as printed &middot; <b>Enter</b> SUBMIT &middot; <b>Backspace</b> DEL &middot; <b>M</b> MODE &middot; <b>S</b> SHIFT &middot; arrow keys &middot; <b>Esc</b> RESET.</p>
 
      <h3>SHIFT LAYER</h3>
-     <p>Tap SHIFT, then a key within 4 seconds. Tap SHIFT again to cancel. The yellow text above a key is its SHIFT function.</p>
+     <p>Tap SHIFT, then a key within 4 seconds. Tap SHIFT again to cancel. The amber text above a key is its SHIFT function. A key with no amber text just types as normal.</p>
      <table>
       <tr><th>SHIFT +</th><th>Does</th></tr>
-      <tr><td>7 START/STOP</td><td>Start from the menu or result screen; quit from a problem or memorise screen</td></tr>
-      <tr><td>8 FAST</td><td>Toggle auto-submit</td></tr>
-      <tr><td>9 REPORT</td><td>Show the session report</td></tr>
-      <tr><td>4 PARAM+</td><td>Increase the selected setting</td></tr>
-      <tr><td>5 PARAM&minus;</td><td>Decrease the selected setting</td></tr>
-      <tr><td>6 JUMP</td><td>Next setting</td></tr>
+      <tr><td>0 OFF</td><td>Sleep. Any key wakes it</td></tr>
+      <tr><td>1 PAUSE</td><td>Pause or resume the round timer</td></tr>
+      <tr><td>2 STATS</td><td>Session report (attempts, accuracy, average, best)</td></tr>
+      <tr><td>. 6174</td><td>Kaprekar's constant</td></tr>
+      <tr><td>3 TIMER</td><td>Show or hide the timer during a round</td></tr>
+      <tr><td>4 HISTORY</td><td>Answers this session. LEFT / RIGHT scroll</td></tr>
+      <tr><td>6 NEW</td><td>Start a new session</td></tr>
+      <tr><td>8 CLOCK</td><td>Date and time</td></tr>
+      <tr><td>9 MISTAKES</td><td>Problems you got wrong this session. LEFT / RIGHT scroll</td></tr>
+      <tr><td>DEL CLEAR ALL</td><td>Clear the session, its history and mistakes</td></tr>
+      <tr><td>LEFT PREV / RIGHT NEXT</td><td>Previous or next mode (in the menu), or scroll a list</td></tr>
      </table>
 
      <h3>MENU</h3>
@@ -1047,7 +1057,7 @@
       <li>Type digits (up to 22). DEL removes the last one.</li>
       <li>SUBMIT checks your answer (needs at least one digit).</li>
       <li>FAST on: auto-submits once you've typed as many characters as the key has.</li>
-      <li>Quit to the menu: MODE twice within 1.5 s, or SHIFT+7.</li>
+      <li>Quit to the menu: MODE twice within 1.5 s.</li>
      </ul>
 
      <h3>RESULT SCREEN</h3>
@@ -1055,11 +1065,11 @@
       <li><b>CORRECT</b> exact match</li>
       <li><b>CLOSE</b> (SQ ROOT only) within 0.01%</li>
       <li><b>WRONG</b> anything else</li>
-      <li>SUBMIT next &middot; MODE menu &middot; SHIFT+9 report</li>
+      <li>SUBMIT next &middot; MODE menu &middot; SHIFT+2 stats</li>
      </ul>
 
      <h3>HARDWARE</h3>
-     <p>Display: 400 &times; 240 memory LCD over SPI (SCLK 18, SI 23, SCS 17, DISP 19, pump SD 22). Key matrix: rows GPIO 13, 14, 25, 26, 27; columns GPIO 32, 33, 4, 35. Power: 2&times;AAA or USB-C. SWD programming pads on the board.</p>
+     <p>Display: 400 &times; 240 memory LCD over SPI (SCLK 18, SI 23, SCS 17, DISP 19, pump SD 22). Key matrix: rows GPIO 13, 14, 25, 26, 27; columns GPIO 32, 33, 4, 35. Power: LiPo 503040 (5 &times; 30 &times; 40 mm), charged over USB-C. SWD programming pads on the board.</p>
     </div>
    </div>
   </div>
@@ -1068,9 +1078,8 @@
   <div class="cxFace cxBack" id="cxBack">
    <i class="cxScrew cxS1"></i><i class="cxScrew cxS2"></i><i class="cxScrew cxS3"></i><i class="cxScrew cxS4"></i>
    <div class="cxBkTitle">calcke<i>REV A</i></div>
-   <div class="cxBatt"><div class="cxGrip"></div><span>BAT &middot; 2 &times; AAA</span><em>&#9660; SLIDE TO OPEN</em></div>
-   <div class="cxBkInfo">MENTAL MATHS TRAINER<br>400 &times; 240 MEMORY LCD</div>
-   <div class="cxBkPort"><div class="cxUsb"></div><span>USB-C</span></div>
+   <div class="cxBkBody"><div class="cxGripL"></div><div class="cxGripR"></div><div class="cxEyelet"></div><div class="cxMagnet"></div></div>
+      <div class="cxBkPort"><div class="cxUsb"></div><span>USB-C</span></div>
    <div class="cxBkHint">TAP TO TURN OVER</div>
   </div>
 
@@ -2699,11 +2708,13 @@ function isOn(){return !view.hidden}
 function sheetOpen(){return !sheet.hidden}
 
 /* ---- keypad (same matrix as the PCB) ---- */
-var K=[['SHIFT','',0,0],['MODE','',0,1],['DEL','',0,2],['UP','',0,3],
-['7','START/STOP',1,0],['8','FAST',1,1],['9','REPORT',1,2],['LEFT','',1,3],
-['4','PARAM+',2,0],['5','PARAM-',2,1],['6','JUMP',2,2],['RIGHT','',2,3],
-['1','',3,0],['2','',3,1],['3','',3,2],['DOWN','',3,3],
-['0','',4,0],['.','',4,1],['SUBMIT','',4,2],['RESET','',4,3]];
+/* the SHIFT functions printed above the keys (as on the casing) */
+var SHL={'0':'OFF','1':'PAUSE','2':'STATS','.':'6174','3':'TIMER','4':'HISTORY','6':'NEW','8':'CLOCK','9':'MISTAKES','DEL':'CLEAR ALL','LEFT':'PREV','RIGHT':'NEXT'};
+var K=[['SHIFT','',0,0],['MODE','',0,1],['RESET','',0,2],['UP','',0,3],
+['7','',1,0],['8',SHL['8'],1,1],['9',SHL['9'],1,2],['LEFT',SHL.LEFT,1,3],
+['4',SHL['4'],2,0],['5','',2,1],['6',SHL['6'],2,2],['RIGHT',SHL.RIGHT,2,3],
+['1',SHL['1'],3,0],['2',SHL['2'],3,1],['3',SHL['3'],3,2],['DOWN','',3,3],
+['0',SHL['0'],4,0],['.',SHL['.'],4,1],['DEL',SHL.DEL,4,2],['SUBMIT','',4,3]];
 var GLY={UP:'▲',DOWN:'▼',LEFT:'◀',RIGHT:'▶'};
 var CLS={SHIFT:'acc',SUBMIT:'go',RESET:'rst',MODE:'fn',DEL:'fn',UP:'fn ar',DOWN:'fn ar',LEFT:'fn ar',RIGHT:'fn ar','.':'fn'};
 $('cxPad').innerHTML=K.map(function(k){var id=k[0];
@@ -2713,11 +2724,14 @@ var EL={};Array.prototype.forEach.call(document.querySelectorAll('#cxPad .cxKc')
 /* ---- calcke logic ---- */
 var MODES=['SQ ROOT','DAY','CUBE RT','MEMORY','MULTIPLY'],PN=[1,0,1,2,2];
 var MO=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],DN=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-var cfg={sf:10,cube:4,memN:6,memT:6,mulA:3,mulB:2,fast:false};
+var cfg={sf:10,cube:4,memN:6,memT:6,mulA:3,mulB:2,fast:false,timer:true};
 try{Object.assign(cfg,JSON.parse(localStorage.getItem('calckeCfg')||'{}'))}catch(e){}
 function PR(m,w){return m==0?['sf','sig figs',2,12]:m==2?['cube','root digits',1,6]:m==3?(w==0?['memN','digits',3,20]:['memT','flash time',1,20]):(w==0?['mulA','1st digits',1,9]:['mulB','2nd digits',1,9])}
 function pv(m,w){var p=PR(m,w);return p[0]=='memT'?(cfg.memT*.5).toFixed(1)+' s':cfg[p[0]]}
 var mode=0,which=0,st='boot',prev='menu',ans='',P={},verdict=0,lastMs=0,t0=0,tB=0,tE=0,quit=0,shUntil=0,nA=0,nC=0,tSum=0,best=0;
+var hist=[],hi=0,mi=0,paused=false,pausedAt=0,msg='',msgUntil=0;
+function elapsed(){return (paused?pausedAt:Date.now())-t0}
+function flash(s){msg=s;msgUntil=Date.now()+1300}
 var R=function(a,b){return a+Math.floor(Math.random()*(b-a+1))},p10=function(n){return Math.pow(10,n)};
 function dow(y,m,d){var t=[0,3,2,5,0,3,5,1,4,6,2,4];if(m<3)y--;return(y+(y/4|0)-(y/100|0)+(y/400|0)+t[m-1]+d)%7}
 function dim(y,m){return m==2&&((y%4==0&&y%100!=0)||y%400==0)?29:[31,28,31,30,31,30,31,31,30,31,30,31][m-1]}
@@ -2736,9 +2750,19 @@ function judge(){if(!ans)return 2;
 function save(){try{localStorage.setItem('calckeCfg',JSON.stringify(cfg))}catch(e){}}
 function startAns(){st='answer';t0=Date.now();ans=''}
 function startProb(){gen();ans='';if(mode==3){st='show';tB=Date.now();tE=tB+cfg.memT*500}else startAns()}
-function submit(){lastMs=Date.now()-t0;verdict=judge();nA++;tSum+=lastMs;if(verdict==0){nC++;if(!best||lastMs<best)best=lastMs}st='result'}
+function submit(){if(paused){paused=false;t0+=Date.now()-pausedAt}lastMs=Date.now()-t0;verdict=judge();nA++;tSum+=lastMs;if(verdict==0){nC++;if(!best||lastMs<best)best=lastMs}
+ hist.push({t:P.text||'',you:mode==1?(ans?ans+'='+DN[ans-1]:'-'):(ans||'-'),key:P.show||'',v:verdict,ms:lastMs});
+ hi=hist.length-1;st='result'}
+function mistakes(){return hist.filter(function(e){return e.v!=0})}
+function newSession(){save();nA=nC=tSum=best=0;hist=[];paused=false;startProb()}
+function clearAll(){hist=[];nA=nC=tSum=best=0;paused=false;flash('CLEARED');if(st=='hist'||st=='miss')st='menu'}
+function scrollList(d){if(st=='hist'){hi=Math.min(hist.length-1,Math.max(0,hi+d))}else if(st=='miss'){var m=mistakes();mi=Math.min(m.length-1,Math.max(0,mi+d))}}
+function togglePause(){if(st!='answer'){flash('PAUSE IN A ROUND');return}if(paused){t0+=Date.now()-pausedAt;paused=false}else{paused=true;pausedAt=Date.now()}}
 function onKey(k){
  if(st=='boot'){st='menu';return}
+ if(st=='off'){st='boot';return}
+ if(st=='kap'||st=='clock'){st=prev;return}
+ if(st=='hist'||st=='miss'){if(k=='L')scrollList(-1);else if(k=='R')scrollList(1);else st=prev;return}
  if(st=='report'){st=prev;return}
  var np=PN[mode];
  if(st=='menu'){
@@ -2763,12 +2787,30 @@ function onKey(k){
  }else if(st=='result'){
   if(k=='E'||k=='T')startProb();else if(k=='M')st='menu';else if(k=='F')cfg.fast=!cfg.fast;else if(k=='P'){prev='result';st='report'}}
 }
-var MK={MODE:'M',DEL:'D',UP:'U',DOWN:'N',LEFT:'L',RIGHT:'R',SUBMIT:'E'},SH={'7':'T','8':'F','9':'P','4':'+','5':'-','6':'J'};
+var MK={MODE:'M',DEL:'D',UP:'U',DOWN:'N',LEFT:'L',RIGHT:'R',SUBMIT:'E'};
+/* SHIFT + a key runs the function printed above that key; other keys press normally */
+function shiftDo(id){
+ switch(id){
+  case '0': st='off'; break;
+  case '1': togglePause(); break;
+  case '2': if(nA){prev=st;st='report'}else flash('NO DATA'); break;
+  case '.': prev=st;st='kap'; break;
+  case '3': cfg.timer=!cfg.timer;save();flash(cfg.timer?'TIMER ON':'TIMER OFF'); break;
+  case '4': if(hist.length){prev=st;st='hist';hi=hist.length-1}else flash('NO HISTORY'); break;
+  case '6': newSession(); break;
+  case '8': prev=st;st='clock'; break;
+  case '9': if(mistakes().length){prev=st;st='miss';mi=mistakes().length-1}else flash('NO MISTAKES'); break;
+  case 'DEL': clearAll(); break;
+  case 'LEFT': if(st=='hist'||st=='miss')scrollList(-1);else if(st=='menu'){mode=(mode+4)%5;which=0} break;
+  case 'RIGHT': if(st=='hist'||st=='miss')scrollList(1);else if(st=='menu'){mode=(mode+1)%5;which=0} break;
+ }
+}
 function press(id){
- if(id=='RESET'){st='boot';ans='';shUntil=0;nA=nC=tSum=best=0;return}
+ if(id=='RESET'){st='boot';ans='';shUntil=0;paused=false;nA=nC=tSum=best=0;hist=[];return}
  if(id=='SHIFT'){shUntil=Date.now()<shUntil?0:Date.now()+4000;return}
- var k=MK[id]||id;if(Date.now()<shUntil){shUntil=0;k=SH[k]||k}
- onKey(k)}
+ if(Date.now()<shUntil&&SHL[id]!==undefined){shUntil=0;shiftDo(id);return}
+ shUntil=0;
+ onKey(MK[id]||id)}
 
 /* ---- 400x240 memory-LCD (drawn at 2x) ---- */
 var cv=$('cxScr'),g=cv.getContext('2d');g.setTransform(2,0,0,2,0,0);
@@ -2778,13 +2820,25 @@ function T(s,x,y,sz,al,col){g.font=F(sz);g.textAlign=al||'left';g.fillStyle=col|
 function fit(s,mw,sz){g.font=F(sz);while(sz>10&&g.measureText(s).width>mw)g.font=F(--sz);return sz}
 function bar(l,r){g.fillStyle=INK;g.fillRect(0,0,400,24);T(l,8,17,15,'left',BG);T(r,392,17,13,'right',BG)}
 function foot(s){g.fillStyle=INK;g.fillRect(8,212,384,1);T(s,200,230,fit(s,384,12),'center')}
-function flags(){return (Date.now()<shUntil?'SHIFT ':'')+(cfg.fast?'FAST':'')}
+function flags(){return (Date.now()<shUntil?'SHIFT ':'')+(paused?'PAUSED ':'')+(cfg.fast?'FAST':'')}
+function entryScreen(list,idx,title){
+ var e=list[idx];bar(title,(idx+1)+'/'+list.length);
+ var sz=fit(e.t,380,40);T(e.t,200,84,sz,'center');
+ var you=e.you,key=e.key;var z=fit(you.length>key.length?you:key,300,26);
+ T('you',14,130,16);T(you,70,130,z);T('key',14,166,16);T(key,70,166,z);
+ T(e.v==0?'CORRECT':e.v==1?'CLOSE':'WRONG',386,130,22,'right');
+ foot('LEFT/RIGHT scroll   any key back')}
 function draw(){
  if(!isOn())return;
  g.fillStyle=BG;g.fillRect(0,0,400,240);
  var now=Date.now();
  if(st=='show'&&now>=tE)startAns();
- if(st=='boot'){T('calcke',200,112,64,'center');T('mental maths that never gives the answer',200,146,12,'center');if(now%1000<600)T('press any key',200,200,16,'center')}
+ if(st=='off'){T('press any key',200,124,14,'center');return}
+ if(st=='kap'){bar('6174','');T('6174',200,112,92,'center');T("Kaprekar's constant",200,150,18,'center');T('take 4 digits, sort, subtract, repeat',200,178,14,'center');foot('press any key');return}
+ if(st=='clock'){bar('CLOCK','');var d=new Date(),hh=('0'+d.getHours()).slice(-2),mm=('0'+d.getMinutes()).slice(-2),ss=('0'+d.getSeconds()).slice(-2);T(hh+':'+mm+':'+ss,200,118,66,'center');T(DN[(d.getDay()+6)%7]+' '+d.getDate()+' '+MO[d.getMonth()]+' '+d.getFullYear(),200,158,22,'center');foot('press any key');return}
+ if(st=='hist'){if(hist.length)entryScreen(hist,hi,'HISTORY');else{st='menu'}return}
+ if(st=='miss'){var mx=mistakes();if(mx.length)entryScreen(mx,Math.min(mi,mx.length-1),'MISTAKES');else{st='menu'}return}
+ if(st=='boot'){T('calcke',200,112,64,'center');T('Mental math training calculator',200,146,12,'center');if(now%1000<600)T('press any key',200,200,16,'center')}
  else if(st=='menu'){
   bar('SETTINGS',flags());
   MODES.forEach(function(m,i){var w=76,x=6+i*77;if(i==mode){g.fillStyle=INK;g.fillRect(x,32,w,22)}T(m,x+w/2,48,12,'center',i==mode?BG:INK);if(i!=mode){g.strokeStyle=INK;g.lineWidth=1;g.strokeRect(x+.5,32.5,w,22)}});
@@ -2795,7 +2849,7 @@ function draw(){
   foot('MODE next  UP/DOWN pick  LEFT/RIGHT change  SUBMIT start')}
  else if(st=='show'){bar('MEMORISE',flags());T(P.text,200,130,fit(P.text,380,64),'center');
   g.fillStyle=INK;g.fillRect(20,186,360*Math.max(0,(tE-now)/(tE-tB)),10);g.strokeStyle=INK;g.strokeRect(20.5,186.5,360,10);foot('remember it...')}
- else if(st=='answer'){bar(MODES[mode],((now-t0)/1000).toFixed(1)+'s '+flags());
+ else if(st=='answer'){bar(MODES[mode],(cfg.timer?(elapsed()/1000).toFixed(1)+'s ':'')+flags());
   if(mode==3)T('type the digits',200,92,26,'center');else T(P.text,200,92,fit(P.text,380,54),'center');
   g.fillStyle=INK;g.fillRect(8,112,384,2);
   if(mode==1)T('press 1 - 7',200,170,34,'center');
@@ -2807,10 +2861,11 @@ function draw(){
   T('you',14,114,16);T(you,70,114,sz);T('key',14,150,16);T(key,70,150,sz);
   if(verdict&&mode!=1&&ans){var i=0;while(ans[i]&&key[i]&&ans[i]==key[i])i++;g.font=F(sz);var x2=70+g.measureText(key.slice(0,i)).width,w2=g.measureText('M').width;g.fillStyle=INK;g.fillRect(x2,154,w2,3)}
   T(nC+'/'+nA+'   avg '+(tSum/1000/nA).toFixed(1)+'s   best '+(best/1000).toFixed(1)+'s',200,196,15,'center');
-  foot('SUBMIT next   MODE menu   SH+9 report')}
+  foot('SUBMIT next   MODE menu   SH+2 stats')}
  else if(st=='report'){bar('REPORT','');
   [['attempts',nA],['correct',nC],['accuracy',nA?Math.round(100*nC/nA)+'%':'-'],['average',nA?(tSum/1000/nA).toFixed(1)+' s':'-'],['best',best?(best/1000).toFixed(1)+' s':'-']].forEach(function(r,i){T(r[0],30,64+i*30,20);T(''+r[1],370,64+i*30,22,'right')});
   foot('press any key')}
+ if(Date.now()<msgUntil){g.fillStyle=INK;g.fillRect(90,100,220,40);T(msg,200,127,20,'center',BG)}
 }
 
 /* ---- sound ---- */
@@ -2829,8 +2884,8 @@ function up(id){delete down[id];if(EL[id])EL[id].classList.remove('dn')}
 Object.keys(EL).forEach(function(id){var e=EL[id];
  e.addEventListener('pointerdown',function(ev){ev.preventDefault();dn(id)});
  ['pointerup','pointerleave','pointercancel'].forEach(function(t){e.addEventListener(t,function(){up(id)})})});
-var KM={Enter:'SUBMIT',Backspace:'DEL',ArrowUp:'UP',ArrowDown:'DOWN',ArrowLeft:'LEFT',ArrowRight:'RIGHT',m:'MODE',M:'MODE',s:'SHIFT',S:'SHIFT',Escape:'RESET',',':'.'};
-function kid(e){return KM[e.key]||(/^[0-9.]$/.test(e.key)?e.key:null)}
+var KM={Enter:'SUBMIT',NumpadEnter:'SUBMIT',Backspace:'DEL',Delete:'DEL',ArrowUp:'UP',ArrowDown:'DOWN',ArrowLeft:'LEFT',ArrowRight:'RIGHT',m:'MODE',M:'MODE',s:'SHIFT',S:'SHIFT',Escape:'RESET',',':'.',Decimal:'.'};
+function kid(e){if(e.code==='NumpadDecimal')return '.';return KM[e.key]||(/^[0-9.]$/.test(e.key)?e.key:null)}
 /* capture on window, so the trainer's own key handler never sees keys while the device is showing */
 window.addEventListener('keydown',function(e){
  if(!isOn())return;
