@@ -824,6 +824,20 @@
   .cxKc[data-id="RESET"] .cxWell{background:transparent; box-shadow:none;}
   .cxKc[data-id="SHIFT"] .cxWell{background:transparent; box-shadow:none;}
   .cxKc[data-id="SUBMIT"] .cxWell{background:transparent; box-shadow:none;}
+
+  /* ---- voice mode ---- */
+  .session-bar{ flex-wrap:wrap; }
+  .fast-toggle:disabled{ opacity:.4; cursor:not-allowed; }
+  .voice-row{ display:flex; flex-direction:column; align-items:center; gap:6px; margin:-4px 0 14px; }
+  .mic-btn{
+    appearance:none; border:1px solid var(--border); background:var(--surface-2); color:var(--text-dim);
+    font-family:var(--sans); font-size:14px; font-weight:700; padding:10px 18px; border-radius:999px; cursor:pointer;
+  }
+  .mic-btn:hover{ border-color:var(--accent); }
+  .mic-btn.listening{ border-color:var(--success); color:var(--success); background:var(--success-soft); animation:micPulse 1.4s ease-in-out infinite; }
+  .mic-btn.speaking{ border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
+  @keyframes micPulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(0,230,118,.35); } 50%{ box-shadow:0 0 0 8px rgba(0,230,118,0); } }
+  .heard{ min-height:1.2em; font-size:13px; color:var(--text-faint); text-align:center; max-width:100%; overflow-wrap:anywhere; }
 </style>
 </head>
 <body>
@@ -851,6 +865,7 @@
   <div class="session-bar">
     <button id="startStopBtn" class="start-btn" type="button">Start</button>
     <button id="fastToggle" class="fast-toggle" type="button" aria-pressed="false">Fast: Off</button>
+    <button id="voiceToggle" class="fast-toggle" type="button" aria-pressed="false">Voice: Off</button>
     <div class="stopwatch" id="stopwatch">00:00.0</div>
   </div>
 
@@ -884,9 +899,19 @@
     <span id="memTimeValue">3.0s</span>
   </div>
 
+  <div class="params" id="paramsVoice" hidden>
+    <label for="voiceRate">Voice speed</label>
+    <input type="range" id="voiceRate" min="0.7" max="1.6" step="0.1" value="1">
+    <span id="voiceRateValue">1.0&times;</span>
+  </div>
+
   <main class="stage">
     <div class="problem" id="problemDisplay">4,761</div>
     <div class="mem-progress" id="memProgress"><div class="mem-progress-fill" id="memProgressFill"></div></div>
+    <div class="voice-row" id="voiceRow" hidden>
+      <button type="button" id="micBtn" class="mic-btn"></button>
+      <div class="heard" id="heardText" aria-live="polite"></div>
+    </div>
     <div class="answer-row">
       <input type="text" id="answerInput" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="decimal" enterkeyhint="go" placeholder="Answer">
     </div>
@@ -1158,7 +1183,14 @@
     historyModeLabel: document.getElementById("historyModeLabel"),
     timeChartHolder: document.getElementById("timeChartHolder"),
     breakdownHolder: document.getElementById("breakdownHolder"),
-    historyBody: document.getElementById("historyBody")
+    historyBody: document.getElementById("historyBody"),
+    voiceToggle: document.getElementById("voiceToggle"),
+    paramsVoice: document.getElementById("paramsVoice"),
+    voiceRate: document.getElementById("voiceRate"),
+    voiceRateValue: document.getElementById("voiceRateValue"),
+    voiceRow: document.getElementById("voiceRow"),
+    micBtn: document.getElementById("micBtn"),
+    heardText: document.getElementById("heardText")
   };
 
   var state = {
@@ -2300,6 +2332,7 @@
   }
 
   function enterIdle(){
+    voiceEnd();
     state.phase = "idle";
     if(state.memoryTimeoutId){
       clearTimeout(state.memoryTimeoutId);
@@ -2324,6 +2357,7 @@
   function nextProblem(){
     resumeStopwatch();
     if(!state.started) return;
+    voiceReset();
     if(state.memoryTimeoutId){
       clearTimeout(state.memoryTimeoutId);
       state.memoryTimeoutId = null;
@@ -2349,9 +2383,11 @@
     updateActionButton();
     showVirtualKeyboard();
     focusAnswer();
+    voiceOnAnswering();
   }
 
   function startMemoryShowing(){
+    if(voice.on){ voiceMemory(); return; }
     state.phase = "memory-showing";
     els.problemDisplay.textContent = state.problem.displayText;
     els.answerInput.disabled = true;
@@ -2386,6 +2422,7 @@
 
   function submitAnswer(raw){
     if(state.phase !== "answering") return;
+    voiceStopListening();
     var elapsed = (performance.now() - state.startTime) / 1000;
     var problem = state.problem;
     var result = checkAnswer(problem, raw);
@@ -2400,11 +2437,12 @@
       submitted: result.submittedDisplay,
       timeTaken: elapsed,
       status: result.status,
-      fast: state.fastMode
+      fast: state.fastMode,
+      voice: voice.on
     });
     saveLog();
 
-    if(state.fastMode && result.status === "Correct"){
+    if(state.fastMode && !voice.on && result.status === "Correct"){
       // fast mode: no review screen, the clock keeps running, next problem appears at once
       renderStats();
       renderHistory();
@@ -2425,6 +2463,7 @@
     els.answerInput.disabled = true;
     setWeekdayButtonsDisabled(true);
     updateActionButton();
+    voiceAfterSubmit(result, elapsed);
   }
 
   // ---------- events ----------
@@ -2547,7 +2586,7 @@
   }
 
   function fastActive(){
-    return state.fastMode && state.phase === "answering" && state.problem && state.mode !== "dayofweek";
+    return state.fastMode && !voice.on && state.phase === "answering" && state.problem && state.mode !== "dayofweek";
   }
 
   els.answerInput.addEventListener("beforeinput", function(e){
@@ -2692,12 +2731,591 @@
     if(!els.historySection.hidden) renderSessionsTrend();
   });
 
+  // <voice-pure>
+  var V_ONES = ["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve","thirteen","fourteen","fifteen","sixteen","seventeen","eighteen","nineteen"];
+  var V_TENS = ["","","twenty","thirty","forty","fifty","sixty","seventy","eighty","ninety"];
+  var V_ORD = ["","first","second","third","fourth","fifth","sixth","seventh","eighth","ninth","tenth","eleventh","twelfth","thirteenth","fourteenth","fifteenth","sixteenth","seventeenth","eighteenth","nineteenth"];
+
+  function words999(n){
+    var out = [];
+    if(n >= 100){ out.push(V_ONES[Math.floor(n / 100)] + " hundred"); n = n % 100; }
+    if(n > 0){
+      if(n < 20) out.push(V_ONES[n]);
+      else out.push(V_TENS[Math.floor(n / 10)] + (n % 10 ? "-" + V_ONES[n % 10] : ""));
+    }
+    return out.join(" ");
+  }
+
+  // Up to 9 digits: spoken as a normal number. Longer: read in groups of three so it stays easy to follow.
+  function sayInt(str){
+    str = String(str).replace(/[^0-9]/g, "").replace(/^0+(?=\d)/, "");
+    if(!str) return "zero";
+    if(str === "0") return "zero";
+    if(str.length <= 9){
+      var n = parseInt(str, 10), parts = [];
+      var mil = Math.floor(n / 1000000), th = Math.floor((n % 1000000) / 1000), rest = n % 1000;
+      if(mil) parts.push(words999(mil) + " million");
+      if(th) parts.push(words999(th) + " thousand");
+      if(rest) parts.push(words999(rest));
+      return parts.join(" ");
+    }
+    var groups = [];
+    for(var i = str.length; i > 0; i -= 3) groups.unshift(str.slice(Math.max(0, i - 3), i));
+    return groups.map(function(g, idx){
+      if(idx === 0) return words999(parseInt(g, 10));
+      var z = g.match(/^0*/)[0].length;
+      if(z === 3) return "zero zero zero";
+      return new Array(z + 1).join("zero ") + words999(parseInt(g, 10));
+    }).join(", ");
+  }
+
+  function sayDigits(str){
+    return String(str).replace(/[^0-9]/g, "").split("").map(function(d){ return V_ONES[+d]; }).join(" ");
+  }
+
+  function sayDecimal(str){
+    var s = /e/i.test(str) ? String(parseFloat(str)) : String(str);
+    var p = s.split(".");
+    return p.length > 1 ? sayInt(p[0]) + " point " + sayDigits(p[1]) : sayInt(p[0]);
+  }
+
+  function ordinalWords(n){
+    if(n < 20) return V_ORD[n];
+    if(n === 20) return "twentieth";
+    if(n === 30) return "thirtieth";
+    return V_TENS[Math.floor(n / 10)] + "-" + V_ORD[n % 10];
+  }
+
+  function sayYear(y){
+    if(y >= 2000 && y <= 2009) return "two thousand" + (y % 100 ? " " + V_ONES[y % 100] : "");
+    var hi = Math.floor(y / 100), lo = y % 100;
+    var head = words999(hi);
+    if(lo === 0) return head + " hundred";
+    return head + " " + (lo < 10 ? "oh " + V_ONES[lo] : words999(lo));
+  }
+
+  function promptTextFor(p, withSpec){
+    if(p.mode === "sqrt"){
+      return "Square root of " + sayInt(p.displayText) + (withSpec ? ", to " + p.sigFigs + " significant figures" : "") + ".";
+    }
+    if(p.mode === "dayofweek"){
+      var m = /^([A-Za-z]+) (\d+), (\d+)$/.exec(p.displayText);
+      if(m) return "What day of the week is " + m[1] + " " + ordinalWords(parseInt(m[2], 10)) + ", " + sayYear(parseInt(m[3], 10)) + "?";
+      return "What day of the week is " + p.displayText + "?";
+    }
+    if(p.mode === "cuberoot") return "Cube root of " + sayInt(p.displayText) + ".";
+    if(p.mode === "multiply"){
+      var ab = p.displayText.split("\u00d7");
+      return sayInt(ab[0]) + " times " + sayInt(ab[1]) + ".";
+    }
+    return p.displayText;
+  }
+
+  function answerSpeech(p){
+    if(p.mode === "sqrt") return sayDecimal(p.target);
+    if(p.mode === "dayofweek") return p.target;
+    if(p.mode === "memory") return p.target.match(/.{1,3}/g).map(sayDigits).join(", ");
+    return sayInt(p.target);
+  }
+
+  // ---- spoken words -> digits
+  var V_SMALL = {}, V_TEN = {};
+  V_ONES.forEach(function(w, i){ V_SMALL[w] = i; });
+  V_SMALL.oh = 0;
+  V_TENS.forEach(function(w, i){ if(w) V_TEN[w] = i * 10; });
+  var V_SCALE = { thousand: 1e3, million: 1e6, billion: 1e9 };
+  var V_ALIAS = { to: "two", too: "two", "for": "four", fore: "four", ate: "eight", won: "one", tree: "three", sicks: "six", nein: "nine" };
+
+  function spokenToDigits(text){
+    var t = String(text || "").toLowerCase()
+      .replace(/[-\u2013\u2014]/g, " ")
+      .replace(/(\d),(?=\d)/g, "$1")
+      .replace(/[,;:?!]/g, " ")
+      .replace(/\b(point|dot|decimal)\b/g, " . ");
+    var toks = t.split(/\s+/).filter(Boolean);
+    var out = "", g = null;
+    function flush(){ if(g){ out += String(g.total + g.cur); g = null; } }
+    for(var i = 0; i < toks.length; i++){
+      var w = toks[i];
+      if(/^[0-9.]+$/.test(w)){ flush(); out += w; continue; }
+      if(V_ALIAS[w]) w = V_ALIAS[w];
+      if(w === "double" || w === "triple" || w === "quadruple"){
+        var nx = toks[i + 1]; if(nx && V_ALIAS[nx]) nx = V_ALIAS[nx];
+        var dv = /^\d$/.test(nx || "") ? +nx : (V_SMALL[nx] !== undefined && V_SMALL[nx] < 10 ? V_SMALL[nx] : null);
+        if(dv !== null){ flush(); out += new Array((w === "double" ? 2 : w === "triple" ? 3 : 4) + 1).join(String(dv)); i++; }
+        continue;
+      }
+      if(w === "and" || w === "a"){ continue; }
+      if(V_SMALL[w] !== undefined){
+        var v = V_SMALL[w];
+        if(g && g.last === "tens" && v >= 1 && v <= 9){ g.cur += v; g.last = "unit"; }
+        else if(g && (g.last === "hundred" || g.last === "scale") && v >= 1){ g.cur += v; g.last = v < 10 ? "unit" : "teen"; }
+        else { flush(); g = { total: 0, cur: v, last: v < 10 ? "unit" : "teen" }; }
+      } else if(V_TEN[w] !== undefined){
+        if(g && (g.last === "hundred" || g.last === "scale")){ g.cur += V_TEN[w]; g.last = "tens"; }
+        else { flush(); g = { total: 0, cur: V_TEN[w], last: "tens" }; }
+      } else if(w === "hundred"){
+        if(g && g.cur > 0 && g.cur < 100 && g.last !== "hundred"){ g.cur *= 100; g.last = "hundred"; }
+        else { flush(); g = { total: 0, cur: 100, last: "hundred" }; }
+      } else if(V_SCALE[w]){
+        if(g){ g.total += (g.cur || 1) * V_SCALE[w]; g.cur = 0; g.last = "scale"; }
+        else g = { total: V_SCALE[w], cur: 0, last: "scale" };
+      } else {
+        flush();
+      }
+    }
+    flush();
+    return out;
+  }
+
+  function parseWeekday(text){
+    var t = String(text || "").toLowerCase();
+    var rx = [/\bmon(day)?s?\b/, /\btue(s(day)?)?\b/, /\bwed(nesday)?\b/, /\bthu(r(s(day)?)?)?\b/, /\bfri(day)?\b/, /\bsat(urday)?\b/, /\bsun(day)?\b/];
+    for(var i = 0; i < rx.length; i++) if(rx[i].test(t)) return WEEKDAYS[i];
+    return null;
+  }
+
+  function parseCommand(text){
+    var t = " " + String(text || "").toLowerCase().replace(/[^a-z' ]/g, " ") + " ";
+    if(/\b(repeat|again|come again|pardon|one more time|what was that)\b/.test(t)) return "repeat";
+    if(/\b(skip|pass|give up|dunno|i don'?t know|no idea)\b/.test(t)) return "skip";
+    if(/\b(stop|quit|exit|finish|end session|that'?s enough|i'?m done)\b/.test(t)) return "stop";
+    if(/\b(slower|slow down)\b/.test(t)) return "slower";
+    if(/\b(faster|speed up)\b/.test(t)) return "faster";
+    return null;
+  }
+
+  // Returns the answer as the trainer expects it, or null when nothing usable was heard.
+  function parseAnswer(text, mode){
+    if(mode === "dayofweek"){
+      var d = parseWeekday(text);
+      if(d) return d;
+      var n = spokenToDigits(text).replace(/\./g, "");
+      return /^[1-7]$/.test(n) ? WEEKDAYS[parseInt(n, 10) - 1] : null;
+    }
+    var s = spokenToDigits(text);
+    if(mode === "sqrt"){
+      if(!/\d/.test(s)) return null;
+      var parts = s.split(".");
+      s = parts[0] + (parts.length > 1 ? "." + parts.slice(1).join("") : "");
+      if(s.charAt(0) === ".") s = "0" + s;
+      return isNaN(parseFloat(s)) ? null : s;
+    }
+    s = s.replace(/\./g, "");
+    return s.length ? s : null;
+  }
+  // </voice-pure>
+
+  // ===== VOICE MODE: the trainer asks out loud, you answer out loud =====
+  var VOICE_KEY = "mmt_voice_v1";
+  var synth = window.speechSynthesis || null;
+  var SRClass = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+  var IS_ELECTRON = /Electron/i.test(navigator.userAgent);
+  var CapSR = null;
+  try{
+    if(window.Capacitor && typeof window.Capacitor.registerPlugin === "function" &&
+       (typeof window.Capacitor.isNativePlatform !== "function" || window.Capacitor.isNativePlatform())){
+      CapSR = window.Capacitor.registerPlugin("SpeechRecognition");
+    }
+  }catch(e){ CapSR = null; }
+
+  var voice = (function(){
+    var v = { on: false, rate: 1 };
+    try{
+      var o = JSON.parse(localStorage.getItem(VOICE_KEY) || "{}");
+      if(o && typeof o === "object"){
+        v.on = !!o.on;
+        var r = parseFloat(o.rate);
+        if(r >= 0.7 && r <= 1.6) v.rate = r;
+      }
+    }catch(e){}
+    if(!synth) v.on = false;
+    v.token = 0; v.rec = null; v.capActive = false; v.nativePerm = false; v.ttsVoice = null;
+    v.announced = ""; v.silent = 0; v.listenBroken = false; v.timer = null; v.mode = "off";
+    return v;
+  })();
+
+  function saveVoice(){
+    try{ localStorage.setItem(VOICE_KEY, JSON.stringify({ on: voice.on, rate: voice.rate })); }catch(e){}
+  }
+
+  function pickTtsVoice(){
+    if(!synth) return;
+    var vs = synth.getVoices() || [];
+    var en = vs.filter(function(v){ return /^en[-_]/i.test(v.lang); });
+    voice.ttsVoice =
+      en.filter(function(v){ return /natural|online/i.test(v.name); })[0] ||
+      en.filter(function(v){ return /google/i.test(v.name); })[0] ||
+      en.filter(function(v){ return /^en[-_]US/i.test(v.lang); })[0] ||
+      en[0] || null;
+  }
+  if(synth){
+    pickTtsVoice();
+    if(synth.addEventListener) synth.addEventListener("voiceschanged", pickTtsVoice);
+  }
+
+  function canListen(){
+    if(voice.listenBroken) return false;
+    if(CapSR) return true;
+    return !!SRClass && !IS_ELECTRON;
+  }
+
+  function setMic(mode, text){
+    voice.mode = mode;
+    var labels = {
+      speaking: "\uD83D\uDD0A Speaking\u2026 tap to skip",
+      listening: "\uD83C\uDF99\uFE0F Listening\u2026 say your answer",
+      idle: "\uD83C\uDF99\uFE0F Tap to speak",
+      typing: "\u2328\uFE0F Type your answer",
+      off: ""
+    };
+    els.micBtn.textContent = text || labels[mode] || "";
+    els.micBtn.classList.toggle("listening", mode === "listening");
+    els.micBtn.classList.toggle("speaking", mode === "speaking");
+  }
+
+  function showHeard(text, raw){
+    els.heardText.textContent = text ? (raw ? text : "Heard: " + text) : "";
+  }
+
+  function stampStart(){ state.startTime = performance.now(); }
+
+  // speak one line; `done` runs when it has finished (or when this round was cancelled it never runs)
+  function say(text, done){
+    var tok = voice.token;
+    if(!synth){ if(done) setTimeout(function(){ if(tok === voice.token) done(); }, 0); return; }
+    var finished = false, guard = null;
+    function fin(){
+      if(finished) return;
+      finished = true; clearTimeout(guard);
+      if(tok === voice.token && done) done();
+    }
+    try{ synth.cancel(); }catch(e){}
+    try{ synth.resume(); }catch(e){}
+    var u = new SpeechSynthesisUtterance(text);
+    u.rate = voice.rate; u.lang = "en-US";
+    if(voice.ttsVoice) u.voice = voice.ttsVoice;
+    u.onend = fin; u.onerror = fin;
+    // some engines never fire onend; don't get stuck
+    guard = setTimeout(fin, 2500 + (text.length * 90) / voice.rate);
+    synth.speak(u);
+  }
+
+  function stopListening(){
+    if(voice.rec){
+      var r = voice.rec; voice.rec = null;
+      r.onend = r.onerror = r.onresult = r.onspeechend = r.onstart = null;
+      try{ r.abort(); }catch(e){}
+    }
+    if(CapSR && voice.capActive){
+      voice.capActive = false;
+      try{ CapSR.stop(); }catch(e){}
+    }
+  }
+
+  // cancels everything in flight (speech, microphone, pending advance)
+  function voiceReset(){
+    voice.token++;
+    clearTimeout(voice.timer);
+    try{ if(synth) synth.cancel(); }catch(e){}
+    stopListening();
+    setMic(voice.on ? "idle" : "off");
+  }
+  function voiceEnd(){ voiceReset(); voice.announced = ""; showHeard(""); }
+
+  function recError(code, tok){
+    var c = String(code || "").toLowerCase();
+    if(/no-speech|aborted|no match|no speech|speech timeout|didn/.test(c)){ relisten(tok); return; }
+    voice.listenBroken = true;
+    var blocked = /not-allowed|denied|service-not-allowed|permission/.test(c);
+    showHeard(blocked
+      ? "Microphone is blocked. Allow it for this site, then switch Voice off and on. You can still type."
+      : "Listening isn't available here, so I'll read the questions and you type the answers.", true);
+    setMic("typing");
+  }
+
+  function relisten(tok){
+    if(tok !== voice.token || !voice.on || state.phase !== "answering") return;
+    voice.silent++;
+    if(voice.silent === 3){
+      setMic("speaking");
+      say("Take your time. Say repeat to hear the question again.", function(){ beginListening(); });
+      return;
+    }
+    setTimeout(function(){ if(tok === voice.token) beginListening(); }, 150);
+  }
+
+  function listenWeb(tok){
+    var rec = new SRClass();
+    voice.rec = rec;
+    rec.lang = "en-US"; rec.interimResults = true; rec.maxAlternatives = 5; rec.continuous = false;
+    var got = false, endAt = 0;
+    rec.onstart = function(){ if(tok === voice.token) setMic("listening"); };
+    rec.onspeechend = function(){ endAt = performance.now(); };
+    rec.onresult = function(ev){
+      if(tok !== voice.token) return;
+      var res = ev.results[ev.results.length - 1];
+      if(!res.isFinal){ showHeard(res[0].transcript); return; }
+      got = true;
+      var alts = [];
+      for(var i = 0; i < res.length; i++) alts.push(res[i].transcript);
+      handleHeard(alts, endAt);
+    };
+    var failed = false;
+    rec.onerror = function(ev){
+      if(tok !== voice.token) return;
+      var c = String(ev.error || "");
+      // silence is handled by onend (the browser fires error AND end), only real failures stop here
+      if(c === "no-speech" || c === "aborted") return;
+      failed = true;
+      recError(c, tok);
+    };
+    rec.onend = function(){
+      if(tok !== voice.token || voice.rec !== rec) return;
+      voice.rec = null;
+      if(!got && !failed && state.phase === "answering") relisten(tok);
+    };
+    setMic("listening");
+    try{ rec.start(); }catch(e){ recError("start-failed", tok); }
+  }
+
+  function listenNative(tok){
+    setMic("listening");
+    function go(){
+      if(tok !== voice.token) return;
+      voice.capActive = true;
+      CapSR.start({ language: "en-US", maxResults: 5, prompt: "", partialResults: false, popup: false })
+        .then(function(res){
+          voice.capActive = false;
+          if(tok !== voice.token || state.phase !== "answering") return;
+          var m = (res && res.matches) || [];
+          if(m.length) handleHeard(m, 0); else relisten(tok);
+        })
+        .catch(function(err){
+          voice.capActive = false;
+          if(tok !== voice.token) return;
+          recError(String((err && (err.message || err.errorMessage)) || err), tok);
+        });
+    }
+    if(voice.nativePerm){ go(); return; }
+    CapSR.requestPermissions().then(function(p){
+      if(p && p.speechRecognition === "granted"){ voice.nativePerm = true; go(); }
+      else recError("not-allowed", tok);
+    }).catch(function(){ recError("not-allowed", tok); });
+  }
+
+  function beginListening(){
+    if(!voice.on || state.phase !== "answering") return;
+    if(!canListen()){ setMic("typing"); return; }
+    var tok = voice.token;
+    stopListening();
+    if(CapSR) listenNative(tok); else listenWeb(tok);
+  }
+
+  function submitSpoken(answer, endAt){
+    if(state.phase !== "answering") return;
+    if(endAt){
+      // time the answer from "end of question" to "end of your speech", not to when the recognizer finished
+      var lag = performance.now() - endAt;
+      if(lag > 0 && lag < 6000) state.startTime += lag;
+    }
+    els.answerInput.value = answer;
+    submitAnswer(answer);
+  }
+
+  function handleHeard(alts, endAt){
+    var tok = voice.token;
+    showHeard(alts[0] || "");
+    var cmd = parseCommand(alts[0] || "");
+    if(!cmd){
+      for(var i = 0; i < alts.length; i++){
+        var a = parseAnswer(alts[i], state.mode);
+        if(a !== null){ submitSpoken(a, endAt); return; }
+      }
+      for(var j = 1; j < alts.length && !cmd; j++) cmd = parseCommand(alts[j]);
+    }
+    if(cmd){ runCommand(cmd, tok); return; }
+    voice.silent = 0;
+    setMic("speaking");
+    say("Sorry, I didn't catch that. Say it again.", function(){ beginListening(); });
+  }
+
+  function setRate(r){
+    voice.rate = Math.max(0.7, Math.min(1.6, Math.round(r * 10) / 10));
+    els.voiceRate.value = String(voice.rate);
+    els.voiceRateValue.textContent = voice.rate.toFixed(1) + "\u00d7";
+    saveVoice();
+  }
+
+  function runCommand(cmd, tok){
+    voice.silent = 0;
+    if(cmd === "repeat"){
+      setMic("speaking");
+      if(state.mode === "memory"){
+        say("I can't repeat the digits. Give your best guess, or say skip.", function(){ beginListening(); });
+      } else {
+        say(promptTextFor(state.problem, true), function(){ stampStart(); beginListening(); });
+      }
+    } else if(cmd === "skip"){
+      submitSpoken("", 0);
+    } else if(cmd === "stop"){
+      els.startStopBtn.click();
+      say("Okay, session finished.");
+    } else {
+      setRate(voice.rate + (cmd === "slower" ? -0.2 : 0.2));
+      setMic("speaking");
+      say(cmd === "slower" ? "Okay, slower." : "Okay, faster.", function(){ beginListening(); });
+    }
+  }
+
+  function askText(p){
+    var withSpec = voice.announced !== p.modeKey;
+    voice.announced = p.modeKey;
+    return promptTextFor(p, withSpec);
+  }
+
+  // called by the trainer when a question is on screen and waiting for an answer
+  function voiceOnAnswering(){
+    if(!voice.on || !state.problem) return;
+    var tok = voice.token;
+    voice.silent = 0;
+    showHeard("");
+    setMic("speaking");
+    say(askText(state.problem), function(){
+      if(tok !== voice.token) return;
+      stampStart();
+      beginListening();
+    });
+  }
+
+  // memory span, voice style: digits are read out in groups instead of flashed on screen
+  function voiceMemory(){
+    var tok = voice.token, p = state.problem;
+    state.phase = "memory-showing";
+    els.problemDisplay.textContent = "Listen\u2026";
+    els.answerInput.disabled = true;
+    els.answerInput.value = "";
+    els.hint.textContent = "Listen carefully\u2026";
+    updateActionButton();
+    showHeard("");
+    setMic("speaking");
+    var groups = p.target.match(/.{1,3}/g);
+    var intro = voice.announced !== p.modeKey ? "Remember these " + p.target.length + " digits." : "Ready.";
+    voice.announced = p.modeKey;
+    function readFrom(i){
+      if(tok !== voice.token) return;
+      if(i >= groups.length){ setTimeout(finish, 500); return; }
+      say(sayDigits(groups[i]), function(){ setTimeout(function(){ readFrom(i + 1); }, 250); });
+    }
+    function finish(){
+      if(tok !== voice.token) return;
+      say("Go.", function(){
+        if(tok !== voice.token) return;
+        els.problemDisplay.textContent = p.target.split("").map(function(){ return "\u2022"; }).join(" ");
+        els.answerInput.placeholder = "Say or type what you heard";
+        els.hint.textContent = answerHint();
+        state.phase = "answering";
+        stampStart();
+        els.answerInput.disabled = false;
+        updateActionButton();
+        showVirtualKeyboard();
+        focusAnswer();
+        voice.silent = 0;
+        beginListening();
+      });
+    }
+    say(intro, function(){ readFrom(0); });
+  }
+
+  function feedbackSpeech(result, elapsed){
+    var p = state.problem, secs = Math.round(elapsed * 10) / 10;
+    var t = secs + (secs === 1 ? " second" : " seconds");
+    if(result.status === "Correct"){
+      var okWords = ["Correct.", "Right.", "Yes, that's right.", "Good."];
+      return okWords[Math.floor(Math.random() * okWords.length)] + " " + t + ".";
+    }
+    if(result.status === "Margin Error") return "Very close, within the margin. The exact answer is " + answerSpeech(p) + ".";
+    return (result.submittedDisplay === "(blank)" ? "Skipped." : "Not quite.") + " The answer is " + answerSpeech(p) + ".";
+  }
+
+  function voiceStopListening(){ stopListening(); }
+
+  // called by the trainer right after an answer was judged: say the verdict, then ask the next one
+  function voiceAfterSubmit(result, elapsed){
+    if(!voice.on) return;
+    var tok = voice.token;
+    setMic("speaking");
+    say(feedbackSpeech(result, elapsed), function(){
+      voice.timer = setTimeout(function(){
+        if(tok !== voice.token) return;
+        if(state.started && state.phase === "reviewing") nextProblem();
+      }, 350);
+    });
+  }
+
+  function renderVoiceUI(){
+    els.voiceToggle.classList.toggle("on", voice.on);
+    els.voiceToggle.setAttribute("aria-pressed", voice.on ? "true" : "false");
+    els.voiceToggle.textContent = "Voice: " + (voice.on ? "On" : "Off");
+    els.voiceRow.hidden = !voice.on;
+    els.paramsVoice.hidden = !voice.on;
+    els.fastToggle.disabled = voice.on;
+    els.voiceRate.value = String(voice.rate);
+    els.voiceRateValue.textContent = voice.rate.toFixed(1) + "\u00d7";
+    if(voice.on) setMic(canListen() ? "idle" : "typing"); else setMic("off");
+  }
+
+  els.voiceToggle.addEventListener("click", function(){
+    if(!voice.on){
+      if(!synth){ window.alert("This browser can't speak. Try Chrome or Edge."); return; }
+      voice.on = true; voice.listenBroken = false;
+      saveVoice(); renderVoiceUI();
+      if(state.phase === "answering" && state.problem){
+        voiceReset(); voiceOnAnswering();
+      } else {
+        say(canListen() ? "Voice mode on. I'll ask, you answer out loud."
+                        : "Voice mode on. I'll read the questions, you type the answers.");
+      }
+      if(!canListen()){
+        showHeard(IS_ELECTRON
+          ? "Listening isn't available in the desktop app. Open calcke in Chrome or Edge to answer by voice."
+          : "This browser can't listen. Use Chrome or Edge to answer by voice.", true);
+      }
+    } else {
+      voice.on = false; saveVoice(); voiceEnd(); renderVoiceUI();
+    }
+  });
+
+  els.voiceRate.addEventListener("input", function(){ setRate(parseFloat(els.voiceRate.value)); });
+
+  els.micBtn.addEventListener("click", function(){
+    if(!voice.on) return;
+    if(voice.mode === "speaking"){
+      if(state.phase === "answering"){
+        voice.token++;
+        try{ if(synth) synth.cancel(); }catch(e){}
+        stampStart(); beginListening();
+      } else if(state.phase === "reviewing"){
+        nextProblem();
+      }
+      return;
+    }
+    if(state.phase !== "answering") return;
+    if(voice.mode === "listening"){
+      if(voice.rec){ try{ voice.rec.stop(); }catch(e){} }
+      else if(CapSR && voice.capActive){ try{ CapSR.stop(); }catch(e){} }
+      return;
+    }
+    if(canListen()){ voice.silent = 0; beginListening(); }
+  });
+
   // ---------- init ----------
   setupVirtualKeyboard();
   setupCardButtons();
   buildWeekdayButtons();
   renderModeUI();
   renderFastToggle();
+  renderVoiceUI();
   renderStats();
   resetStage();
   tickStopwatch();

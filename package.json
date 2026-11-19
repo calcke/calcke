@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "@capacitor/android": "^7.0.0",
-    "@capacitor/core": "^7.0.0"
+    "@capacitor/core": "^7.0.0",
+    "@capacitor-community/speech-recognition": "^7.0.1"
   },
   "devDependencies": {
     "@capacitor/cli": "^7.0.0",
@@ -24,13 +25,31 @@
   "build": {
     "appId": "com.calcke.app",
     "productName": "calcke",
-    "directories": { "output": "dist" },
-    "files": ["main.js", "index.html", "sw.js", "manifest.webmanifest", "icon-*.png"],
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "index.html",
+      "sw.js",
+      "manifest.webmanifest",
+      "icon-*.png"
+    ],
     "win": {
       "icon": "icon-512.png",
       "target": [
-        { "target": "nsis", "arch": ["x64"] },
-        { "target": "portable", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
       ]
     },
     "nsis": {
@@ -38,6 +57,8 @@
       "allowToChangeInstallationDirectory": true,
       "artifactName": "calcke-setup.exe"
     },
-    "portable": { "artifactName": "calcke-portable.exe" }
+    "portable": {
+      "artifactName": "calcke-portable.exe"
+    }
   }
 }
